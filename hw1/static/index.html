@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload</title>
+</head>
+
+<body>
+    <h1>Upload JSON or XML Files</h1>
+    <form id="upload-form">
+        <div>
+            <input type="file" id="file" name="files" accept=".json,.xml" multiple>
+            <button type="submit">Upload Files</button>
+        </div>
+    </form>
+
+    <div>
+        <label for="search">Search the site:</label>
+        <input type="search" id="search" name="q" />
+        <button onclick="search()">Search</button>
+    </div>
+
+    <button onclick="show_or_hide(this)">隱藏上傳資料</button>
+
+    <div id="upload-documents">
+        <h2>上傳資料</h2>
+        <div id="upload-documents-contents">
+            尚未有資料上傳
+        </div>
+    </div>
+
+    <div id="search-history">
+        <h2>搜尋紀錄</h2>
+    </div>
+
+    <div id="search-result">
+        <h2>搜尋結果</h2>
+        <div id="search-result-contents">
+        </div>
+    </div>
+
+
+    <script src="static/script.js" defer></script>
+</body>
+
+</html>

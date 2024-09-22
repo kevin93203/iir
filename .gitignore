@@ -1,0 +1,5 @@
+*__pycache__
+*venv
+/hw1/data/*
+!/hw1/data/.gitkeep
+.DS_Store
