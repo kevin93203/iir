@@ -1,5 +1,9 @@
 let global_data = null; // 保留全域變數
 
+function triggerFileInput() {
+    document.getElementById('file-input').click();  // 觸發檔案上傳
+}
+
 function show_or_hide(ele) {
     if (ele.innerHTML === "隱藏上傳資料") {
         document.getElementById('upload-documents').style.display = 'none';
@@ -16,20 +20,20 @@ function render_documents(data, search_result = null, is_history = false) {
     documents_results.innerHTML = '';
     const document_size = data['filenames'].length;
     if (search_result) {
-        documents_results.insertAdjacentHTML(
+        const search_content = document.getElementById("search-content")
+        search_content.innerHTML = '';
+        search_content.insertAdjacentHTML(
             'beforeend',
             `
-                <div>
-                    <div>搜尋內容: ${search_result['query']}</div>
-                    <div>關鍵字: ${search_result['query_keywords'].join(", ")}</div>
-                    <div>關鍵字字數: ${search_result['query_keywords'].length}</div>
-                </div>
+                <div>搜尋內容: ${search_result['query']}</div>
+                <div>關鍵字: ${search_result['query_keywords'].join(", ")}</div>
+                <div>關鍵字字數: ${search_result['query_keywords'].length}</div>
             `
         )
 
         if (!is_history) {
             const history_no = global_data["search_history"].length - 1
-            document.getElementById("search-history").insertAdjacentHTML(
+            document.getElementById("search-history-keywords").insertAdjacentHTML(
                 'beforeend',
                 `
                     <button 
@@ -43,7 +47,8 @@ function render_documents(data, search_result = null, is_history = false) {
         }
 
         if (search_result['highlighted_documents'].every(element => element === null)) {
-            documents_results.append("搜尋不到任何結果！");
+            documents_results.innerHTML = "<p>搜尋不到任何結果！<p>";
+            toggleAllElements();
             return
         }
     }
@@ -53,26 +58,28 @@ function render_documents(data, search_result = null, is_history = false) {
         documents_results.insertAdjacentHTML(
             'beforeend',
             `
-            <div>
-                <h3>${data['filenames'][i]}</h3>
-                ${search_result === null ?
-                `
-                    <div>
-                        <div>characters (including spaces): ${data['statistics'][i]['characters_including_spaces']}</div>
-                        <div>characters (excluding spaces): ${data['statistics'][i]['characters_excluding_spaces']}</div>
-                        <div>words: ${data['statistics'][i]['words']}</div>
-                        <div>sentences: ${data['statistics'][i]['sentences']}</div>
-                        <div>non-ASCII characters: ${data['statistics'][i]['non_ascii_characters']}</div>
-                        <div>non-ASCII words: ${data['statistics'][i]['non_ascii_words']}</div>
-                    </div>
+            <div class='document-content-container'>
+                <div class='document-filename'>${data['filenames'][i]}</div>
+                <div class='document-content'>
+                    ${search_result === null ?
                     `
-                : ""
-            }
-                <p>${document_content}<p>
+                        <div class='document-stats'>
+                            <div>characters (including spaces): <strong>${data['statistics'][i]['characters_including_spaces']}</strong></div>
+                            <div>characters (excluding spaces): <strong>${data['statistics'][i]['characters_excluding_spaces']}</strong></div>
+                            <div>words: <strong>${data['statistics'][i]['words']}</strong></div>
+                            <div>sentences: <strong>${data['statistics'][i]['sentences']}</strong></div>
+                            <div>non-ASCII characters: <strong>${data['statistics'][i]['non_ascii_characters']}</strong></div>
+                            <div>non-ASCII words: <strong>${data['statistics'][i]['non_ascii_words']}</strong></div>
+                        </div>
+                        `
+                    : ""}
+                    <p>${document_content}<p>
+                </div>
             </div>
             `
         );
     }
+    toggleAllElements()
 }
 
 async function search() {
@@ -110,19 +117,14 @@ async function search() {
     }
 }
 
-
-
-document.getElementById('upload-form').onsubmit = async function (event) {
-    event.preventDefault(); // Prevent the default form submission
-
-    const input = document.getElementById('file');
-    if (!input.files.length) {
+async function handleFileUpload(event) {
+    const files = event.target.files;
+    if (!files.length) {
         alert('Please select at least one file.');
         return;
     }
-
     const formData = new FormData();
-    for (const file of input.files) {
+    for (const file of files) {
         formData.append('files', file);
     }
 
@@ -146,4 +148,32 @@ document.getElementById('upload-form').onsubmit = async function (event) {
         console.error('Error:', error);
         alert('An error occurred while uploading files.');
     }
-};
+}
+
+function toggleAllElements(){
+    toggleElements('upload-documents', 'upload-documents-contents')
+    toggleElements('search-history', 'search-history-keywords')
+    toggleElements('search-result', 'search-result-contents')
+}
+
+function toggleElements(parent_id, child_id) {
+    const parentElement = document.getElementById(parent_id);
+    const childElement = document.getElementById(child_id);
+
+    if (childElement.children.length === 0) {
+        parentElement.style.display = 'none';
+    } else {
+        parentElement.style.display = 'flex';
+    }
+}
+
+// 初次頁面載入時執行
+document.addEventListener("DOMContentLoaded", toggleAllElements);
+
+// 監聽 keydown 事件
+document.getElementById("search").addEventListener('keydown', function(event) {
+    // 檢查是否按下 Enter 鍵
+    if (event.key === 'Enter') {
+        search();
+    }
+});
