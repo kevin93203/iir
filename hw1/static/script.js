@@ -38,7 +38,10 @@ function render_documents(data, search_result = null, is_history = false) {
                 `
                     <button 
                         id="history-${history_no}"
-                        onclick="render_documents(global_data, global_data['search_history'][${history_no}], true)"
+                        onclick="
+                            render_documents(global_data, global_data['search_history'][${history_no}], true);
+                            go_to_search_result();
+                        "
                     >
                         ${search_result['query']}
                     </button>
@@ -82,6 +85,18 @@ function render_documents(data, search_result = null, is_history = false) {
     toggleAllElements()
 }
 
+function go_to_search_result(){
+    // 取得你要滾動到的元素
+    const element = document.getElementById('search-result');
+
+    // 使用 scrollIntoView 滾動到該元素
+    element.scrollIntoView({
+        behavior: 'smooth', // 平滑滾動 (也可以設為 'auto')
+        block: 'start',     // 滾動到元素的頂部 ('end' 會滾動到底部)
+        inline: 'nearest'   // 水平滾動行為
+    });
+}
+
 async function search() {
     const query = document.getElementById('search').value;
     if (!global_data) {
@@ -103,10 +118,10 @@ async function search() {
 
         if (response.ok) {
             const search_result = await response.json(); // 取得 JSON 資料
-            console.log(search_result);
             global_data["search_history"].push(search_result)
             render_documents(global_data, search_result);
-            alert('Search documents successfully!');
+            go_to_search_result()
+
         } else {
             const errorData = await response.json(); // 取得錯誤的 JSON 資料（如果有的話）
             alert(`Failed to search documents`);
@@ -137,8 +152,9 @@ async function handleFileUpload(event) {
         if (response.ok) {
             const jsonData = await response.json(); // 取得 JSON 資料
             global_data = jsonData;
-            console.log(global_data);
             render_documents(global_data); // 使用 render_documents 顯示未加亮的文檔
+            clean_history_and_search_result() // 清空搜尋歷史和搜尋結果的html
+            toggleAllElements()
             alert('Files uploaded successfully!');
         } else {
             const errorData = await response.json(); // 取得錯誤的 JSON 資料（如果有的話）
@@ -174,6 +190,53 @@ document.addEventListener("DOMContentLoaded", toggleAllElements);
 document.getElementById("search").addEventListener('keydown', function(event) {
     // 檢查是否按下 Enter 鍵
     if (event.key === 'Enter') {
+        this.blur();
         search();
     }
 });
+
+function clean_history_and_search_result(){
+    const target_id_list = ["search-history-keywords", "search-content","search-result-contents"]
+    target_id_list.forEach(id => {
+        document.getElementById(id).innerHTML = ""
+    })
+}
+
+function observe_popup_search(){
+    const target = document.getElementById('search-bar');
+    const popup_search = document.getElementById('popup-search');
+
+    // 建立 IntersectionObserver
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (!entry.isIntersecting) {
+                // 當 target 離開視窗畫面時，顯示並觸發動畫
+                popup_search.classList.remove('hide');
+                popup_search.classList.add('show');
+            } else {
+                // 當 target 進入視窗畫面時，隱藏並觸發動畫
+                popup_search.classList.remove('show');
+                popup_search.classList.add('hide');
+            }
+        });
+    });
+
+    // 觀察 target 元素
+    observer.observe(target);
+}
+
+observe_popup_search()
+
+function goto_search_bar(){
+    // 取得你要滾動到的元素
+    const element = document.getElementById('search');
+
+    // 使用 scrollIntoView 滾動到該元素
+    element.scrollIntoView({
+        behavior: 'smooth', // 平滑滾動 (也可以設為 'auto')
+        block: 'end',     // 滾動到元素的頂部 ('end' 會滾動到底部)
+        inline: 'nearest'   // 水平滾動行為
+    });
+
+    element.focus();
+}
