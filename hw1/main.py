@@ -22,26 +22,22 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 @app.get("/", response_class=HTMLResponse)
 async def read_html():
     file_path = os.path.join("static", "index.html")
-    return HTMLResponse(open(file_path).read())
+    return HTMLResponse(open(file_path, encoding='utf-8').read())
 
 # 接收上傳的檔案 (支援多檔案上傳)
 @app.post("/upload/")
 async def upload_files(files: List[UploadFile] = File(...)):
     uploaded_file_names = []
-    processed_data = {}
     documents = []
 
     # 處理檔案，限制檔案類型為 json 或 xml
     for file in files:
         file_content = await file.read()  # 讀取檔案內容
-        print(file.content_type)
         if file.content_type == "application/json":
             # 解析 JSON 檔案
             try:
                 json_data:dict = json.loads(file_content)
-                print(json_data)
                 text = json_data.get("text")
-                print(text)
                 if(text):
                     documents.append(text)
             except json.JSONDecodeError:
@@ -62,8 +58,13 @@ async def upload_files(files: List[UploadFile] = File(...)):
             return {"error": f"Unsupported file type: {file.filename}"}
 
         uploaded_file_names.append(file.filename)
+    
+    #對每個文件倒排索引
     inverted_index = se.build_inverted_index(documents)
+    #統計每個文件的統計量
     stats = se.document_statistics(documents)
+    
+    #回傳所有檔案名稱、文件內容、倒排索引, 統計量， 空的搜尋紀錄
     return {
         "filenames": uploaded_file_names, 
         "documents": documents, 
@@ -74,8 +75,7 @@ async def upload_files(files: List[UploadFile] = File(...)):
 
 @app.post("/search/")
 async def search_documents(query:str, data:Data):
-    highlighted_documents = se.highlight_query_in_documents(query, data.documents, data.inverted_index)
-    query_keywords = se.query_keywords(query)
+    highlighted_documents, query_keywords = se.highlight_query_in_documents(query, data.documents, data.inverted_index)
     return {
         "query": query,
         "query_keywords": query_keywords,

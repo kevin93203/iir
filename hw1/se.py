@@ -4,62 +4,80 @@ from nltk.tokenize import word_tokenize, sent_tokenize
 from nltk.stem import PorterStemmer
 import string
 from collections import defaultdict
+import re
 
 nltk.download('punkt')
 nltk.download('stopwords')
 
-# 構建倒排索引的函數
+def custom_tokenize(text):
+    return re.findall(r'\b\w+\b|[^\w\s]',text)
+
 def build_inverted_index(documents):
     stemmer = PorterStemmer()
     stop_words = set(stopwords.words('english'))
     inverted_index = defaultdict(list)  # {stemmed_word: [(doc_id, position), ...]}
 
     for doc_id, document in enumerate(documents):
-        words_in_doc = word_tokenize(document)
+        words_in_doc = custom_tokenize(document)
         for position, word in enumerate(words_in_doc):
             word_clean = word.lower().strip(string.punctuation)
-            stemmed_word = stemmer.stem(word_clean)
-            if stemmed_word not in stop_words and stemmed_word:
+            # 檢查是否為特殊術語（如"COVID-19"）
+            if re.match(r'^[A-Za-z]+(?:-\d+)+$', word):
+                stemmed_word = word.lower()  # 對特殊術語，我們只轉換為小寫，不進行詞幹提取
                 inverted_index[stemmed_word].append((doc_id, position))
+                # 同時為術語的第一部分建立索引
+                first_part = word.split('-')[0].lower()
+                inverted_index[first_part].append((doc_id, position))
+            else:
+                stemmed_word = stemmer.stem(word_clean)
+                if stemmed_word not in stop_words and stemmed_word:
+                    inverted_index[stemmed_word].append((doc_id, position))
 
     return inverted_index
 
-# 使用倒排索引進行查詢並高亮顯示
-def highlight_query_in_documents(query:str, documents:list[str], inverted_index:dict[str, list[tuple[int,int]]]):
-    stemmer = PorterStemmer()
+def query_keywords(query:str, stemmer:PorterStemmer):
     stop_words = set(stopwords.words('english'))
 
     # 預處理查詢詞
-    query_words = word_tokenize(query.lower())
+    query_words = custom_tokenize(query.lower())
     filtered_query = [stemmer.stem(word) for word in query_words if word not in stop_words and word not in string.punctuation]
 
-    # 找到包含查詢詞的文件ID
+    return filtered_query
+
+def highlight_query_in_documents(query: str, documents: list[str], inverted_index: dict[str, list[tuple[int, int]]]):
+    stemmer = PorterStemmer()
+    filtered_query = query_keywords(query, stemmer)
+
+    # 找到包含查询词的文档ID
     doc_ids_to_highlight = set()
     for term in filtered_query:
         if term in inverted_index:
             doc_ids_to_highlight.update([doc_id for doc_id, _ in inverted_index[term]])
 
     highlighted_documents = []
-    
-    # 僅處理包含查詢詞的文件
+
+    # 仅处理包含查询词的文档
     for doc_id, document in enumerate(documents):
         if doc_id in doc_ids_to_highlight:
-            words_in_doc = word_tokenize(document)
-            highlighted_doc = []
+            # 使用正则表达式来分割文档，保留标点符号
+            words_in_doc = custom_tokenize(document)
 
-            for position, word in enumerate(words_in_doc):
+            highlighted_doc = document
+            for word in words_in_doc:
                 word_clean = word.lower().strip(string.punctuation)
                 stemmed_word = stemmer.stem(word_clean)
                 if stemmed_word in filtered_query:
-                    highlighted_doc.append(f"<mark>{word}</mark>")  # 高亮顯示匹配的單詞
-                else:
-                    highlighted_doc.append(word)
-
-            highlighted_documents.append(' '.join(highlighted_doc))
+                    # 使用正则表达式来替换匹配的单词，保持原有的大小写和标点
+                    # 确保没有已经标记的词
+                    highlighted_doc = re.sub(r'(?<!<mark>)\b' + re.escape(word) + r'\b(?!<\/mark>)', 
+                                             f"<mark>{word}</mark>", 
+                                             highlighted_doc)
+            
+            highlighted_documents.append(highlighted_doc)
         else:
-            highlighted_documents.append(None)  # 未命中查詢的文件不變
+            highlighted_documents.append(None)  # 未命中查询的文档保持不变
 
-    return highlighted_documents
+    return highlighted_documents, filtered_query
 
 # 計算每個document的字元數、單詞數和句子數 (去除標點符號)
 def document_statistics(documents):
@@ -72,7 +90,7 @@ def document_statistics(documents):
         num_characters_excluding_spaces = len(document.replace(" ", ""))
         
         # 單詞數 (去除標點符號)
-        words = word_tokenize(document)
+        words = custom_tokenize(document)
         words = [word for word in words if word not in string.punctuation]  # 去除標點符號
         num_words = len(words)
         
@@ -98,11 +116,6 @@ def document_statistics(documents):
     
     return stats
 
-def query_keywords(query:str):
-    words = word_tokenize(query)
-    words = [word for word in words if word not in string.punctuation]  # 去除標點符號
-    return words
-
 if __name__ == '__main__':
     # 測試數據
     documents = [
@@ -116,8 +129,6 @@ if __name__ == '__main__':
 
     # 構建倒排索引
     inverted_index = build_inverted_index(documents)
-
-    print(inverted_index)
 
     # 使用倒排索引進行查詢並高亮顯示
     highlighted_documents = highlight_query_in_documents(query, documents, inverted_index)
