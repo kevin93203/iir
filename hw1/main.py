@@ -6,12 +6,8 @@ import os
 import json
 import xml.etree.ElementTree as ET
 import se
-from pydantic import BaseModel
+import model
 
-class Data (BaseModel):
-    filenames: list[str]
-    documents: list[str]
-    inverted_index:dict[str, list[tuple[int,int]]]
 
 app = FastAPI()
 
@@ -29,6 +25,7 @@ async def read_html():
 async def upload_files(files: List[UploadFile] = File(...)):
     uploaded_file_names = []
     documents = []
+    titles = []
 
     # 處理檔案，限制檔案類型為 json 或 xml
     for file in files:
@@ -52,6 +49,10 @@ async def upload_files(files: List[UploadFile] = File(...)):
                 abstract_texts = root.find(".//AbstractText")
                 if abstract_texts!=None:
                     documents.append(abstract_texts.text)
+
+                article_title = root.find(".//ArticleTitle")
+                if article_title!=None:
+                    titles.append(article_title.text)
             except ET.ParseError:
                 return {"error": f"Failed to parse XML file: {file.filename}"}
         else:
@@ -61,25 +62,30 @@ async def upload_files(files: List[UploadFile] = File(...)):
     
     #對每個文件倒排索引
     inverted_index = se.build_inverted_index(documents)
+    inverted_index_titles = se.build_inverted_index(titles)
     #統計每個文件的統計量
     stats = se.document_statistics(documents)
     
     #回傳所有檔案名稱、文件內容、倒排索引, 統計量， 空的搜尋紀錄
     return {
         "filenames": uploaded_file_names, 
-        "documents": documents, 
-        "inverted_index": inverted_index, 
+        "documents": documents,
+        "titles": titles, 
+        "inverted_index": inverted_index,
+        "inverted_index_titles":  inverted_index_titles,
         "statistics":stats,
         "search_history":[],
     }
 
 @app.post("/search/")
-async def search_documents(query:str, data:Data):
-    highlighted_documents, query_keywords = se.highlight_query_in_documents(query, data.documents, data.inverted_index)
+async def search_documents(query:str, data:model.Data):
+    keywords, highlighted_documents, highlighted_titles, rank = se.highlight_query(query, data)
     return {
         "query": query,
-        "query_keywords": query_keywords,
-        "highlighted_documents": highlighted_documents
+        "query_keywords": keywords,
+        "highlighted_documents": highlighted_documents,
+        "highlighted_titles": highlighted_titles,
+        "rank": rank
     }
 
 if __name__ == "__main__":

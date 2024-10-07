@@ -36,15 +36,16 @@ function render_documents(data, search_result = null, is_history = false) {
             document.getElementById("search-history-keywords").insertAdjacentHTML(
                 'beforeend',
                 `
-                    <button 
+                    <p 
                         id="history-${history_no}"
+                        class="history"
                         onclick="
                             render_documents(global_data, global_data['search_history'][${history_no}], true);
                             go_to_search_result();
                         "
                     >
                         ${search_result['query']}
-                    </button>
+                    </p>
                 `
             )
         }
@@ -56,27 +57,62 @@ function render_documents(data, search_result = null, is_history = false) {
         }
     }
     for (let i = 0; i < document_size; i++) {
-        const document_content = search_result ? search_result['highlighted_documents'][i] : data['documents'][i];
-        if (document_content === null) continue;
+        let document_content = null
+        let document_title = null
+        let index = null
+        if(search_result === null){
+            index = i
+            document_content = data['documents'][index]
+            document_title = data['titles'][index]
+        } else {
+            // 如果在title和document內都沒找到關鍵字，就跳過此文件
+            if( search_result['rank'][i][1] === 0 ) continue;
+            index = search_result['rank'][i][0]
+            document_content = search_result['highlighted_documents'][index] || data['documents'][index]
+            document_title = search_result['highlighted_titles'][index] || data['titles'][index]
+        }   
+
         documents_results.insertAdjacentHTML(
             'beforeend',
             `
-            <div class='document-content-container'>
-                <div class='document-filename'>${data['filenames'][i]}</div>
-                <div class='document-content'>
-                    ${search_result === null ?
-                    `
-                        <div class='document-stats'>
-                            <div>characters (including spaces): <strong>${data['statistics'][i]['characters_including_spaces']}</strong></div>
-                            <div>characters (excluding spaces): <strong>${data['statistics'][i]['characters_excluding_spaces']}</strong></div>
-                            <div>words: <strong>${data['statistics'][i]['words']}</strong></div>
-                            <div>sentences: <strong>${data['statistics'][i]['sentences']}</strong></div>
-                            <div>non-ASCII characters: <strong>${data['statistics'][i]['non_ascii_characters']}</strong></div>
-                            <div>non-ASCII words: <strong>${data['statistics'][i]['non_ascii_words']}</strong></div>
+            <div class='document-wrapper'>
+                ${search_result !== null ?
+                    `   
+                        <div class='document-ranking'>
+                            <div class='rank'> 
+                                ${i+1}
+                            </div>
+                            <div class='filename'>
+                                ${data['filenames'][index]}
+                            </div>
+                            <div class='match-count'>
+                                匹配數: ${search_result['rank'][i][1]}
+                            </div>
                         </div>
+                        `: ""
+                }
+                <div class='document-content-container'>
+                    ${search_result == null ?
                         `
-                    : ""}
-                    <p>${document_content}<p>
+                            <div class='document-filename'>${data['filenames'][index]}</div>
+                        `:""
+                    }
+                    <div class='document-content'>
+                        ${search_result === null ?
+                        `
+                            <div class='document-stats'>
+                                <div>characters (including spaces): <strong>${data['statistics'][index]['characters_including_spaces']}</strong></div>
+                                <div>characters (excluding spaces): <strong>${data['statistics'][index]['characters_excluding_spaces']}</strong></div>
+                                <div>words: <strong>${data['statistics'][index]['words']}</strong></div>
+                                <div>sentences: <strong>${data['statistics'][index]['sentences']}</strong></div>
+                                <div>non-ASCII characters: <strong>${data['statistics'][index]['non_ascii_characters']}</strong></div>
+                                <div>non-ASCII words: <strong>${data['statistics'][index]['non_ascii_words']}</strong></div>
+                            </div>
+                            `
+                        : ""}
+                        <h2 class='document-title'>${document_title}</h2>
+                        <p>${document_content}</p>
+                    </div>
                 </div>
             </div>
             `
