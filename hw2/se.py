@@ -7,8 +7,8 @@ from collections import defaultdict
 import re
 import model
 
-nltk.download('punkt')
-nltk.download('stopwords')
+# nltk.download('punkt')
+# nltk.download('stopwords')
 
 def custom_tokenize(text):
     return re.findall(r'\b\w+\b|[^\w\s]',text)

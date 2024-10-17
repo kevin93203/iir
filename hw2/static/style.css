@@ -44,7 +44,7 @@ input[type="search"]:focus {
     box-shadow: 0 1px 8px rgba(32, 33, 36, 0.3);
 }
 
-button {
+.search-btn {
     background-color: #4285F4;
     color: white;
     border: none;
@@ -148,6 +148,7 @@ button:hover {
     box-shadow: 0 1px 6px rgba(32, 33, 36, 0.28);
     /* border-radius: 8px; */
     max-height: 300px;
+    height: 100%;
 }
 
 .document-content {
@@ -269,7 +270,8 @@ ul li {
 }
 
 .history {
-    font-weight: bold;
+    font-size: 14px;
+    /* font-weight: bold; */
     text-decoration-line: underline;
     color: #686868;
     cursor: pointer;
@@ -277,4 +279,42 @@ ul li {
 
 .history:hover {
     color: #1DAC92;
+}
+
+/* Style the tab */
+.tab {
+    margin-top: 40px;
+    width: 100%;
+    overflow: hidden;
+    background-color: #f1f1f1;
+    border-bottom: 1px solid #ccc;
+}
+
+/* Style the buttons that are used to open the tab content */
+.tab button {
+  font-family: 'Roboto', sans-serif;
+  font-size: 16px;
+  background-color: inherit;
+  float: left;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 14px 16px;
+  transition: 0.3s;
+}
+
+/* Change background color of buttons on hover */
+.tab button:hover {
+  background-color: #ddd;
+}
+
+/* Create an active/current tablink class */
+.tab button.active {
+  background-color: #ccc;
+}
+
+/* Style the tab content */
+.tabcontent {
+  display: none;
+  padding: 6px 12px;
 }

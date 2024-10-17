@@ -30,27 +30,38 @@
         </div>
     </div>
 
-    <button onclick="search()">IIR Search</button>
+    <button class="search-btn" onclick="search()">IIR Search</button>
 
-
-    <div id="upload-documents">
-        <h2>上傳資料</h2>
-        <div id="upload-documents-contents">
-        </div>
+    <!-- Tab links -->
+    <div class="tab">
+        <button id="tab-search-result-btn" class="tablinks" onclick="openTab(event, 'tab-search-result')">搜尋結果</button>
+        <button class="tablinks" onclick="openTab(event, 'tab-upload-documents')">資料集</button>
     </div>
 
-    <div id="search-history">
-        <h2>搜尋紀錄</h2>
-        <div id="search-history-keywords">
 
+    <div id="tab-upload-documents" class="tabcontent">
+        <div id="upload-documents">
+            <h2>上傳資料</h2>
+            <div id="upload-documents-contents">
+            </div>
         </div>
     </div>
+    
+    <div class="tab-content-wrapper">
+        <div id="tab-search-result" class="tabcontent">
+            <div id="search-history">
+                <h2>搜尋紀錄</h2>
+                <div id="search-history-keywords">
 
-    <div id="search-result">
-        <h2>搜尋結果</h2>
-        <div id="search-content">
-        </div>
-        <div id="search-result-contents">
+                </div>
+            </div>
+            <div id="search-result">
+                <h2>搜尋結果</h2>
+                <div id="search-content">
+                </div>
+                <div id="search-result-contents">
+                </div>
+            </div>
         </div>
     </div>
 
@@ -59,6 +70,31 @@
     </div>
 
     <script src="static/script.js" defer></script>
+    <script src="static/render_tabs.js" defer></script>
+    <script src="static/load_document_set.js" defer></script>
+    <script src="static/search_documents.js" defer></script>
+    <script>
+        function openTab(evt, tabID) {
+            // Declare all variables
+            var i, tabcontent, tablinks;
+
+            // Get all elements with class="tabcontent" and hide them
+            tabcontent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+
+            // Get all elements with class="tablinks" and remove the class "active"
+            tablinks = document.getElementsByClassName("tablinks");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+
+            // Show the current tab, and add an "active" class to the button that opened the tab
+            document.getElementById(tabID).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+    </script>
 </body>
 
 </html>

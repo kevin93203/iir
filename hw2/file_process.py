@@ -25,8 +25,12 @@ async def analysis(file: UploadFile | str):
     pmid = root.find(".//PMID")
     title = root.find(".//ArticleTitle")
     abstract = root.find(".//AbstractText")
+    dateCompletedEle = root.find(".//DateCompleted")
+    dateRevisedEle = root.find(".//DateRevised")
 
     if (pmid != None) and (title!=None) and (abstract!=None) :
+        dateCompleted = datetime.strptime(''.join(dateCompletedEle.itertext()),"%Y%m%d") if dateCompletedEle else None
+        dateRevised = datetime.strptime(''.join(dateRevisedEle.itertext()),"%Y%m%d") if dateRevisedEle else None
         title_text = ''.join(title.itertext())
         abstract_text = ''.join(abstract.itertext())
         nonStemInvIdx = {"title":{}, "abstract":{}} 
@@ -49,6 +53,8 @@ async def analysis(file: UploadFile | str):
 
         doc = {
             "pmid": pmid.text,
+            "dateCompleted": dateCompleted,
+            "dateRevised": dateRevised,
             "title": title_text,
             "abstract": abstract_text,
             "pStemInvIdx": pStemInvIdx,
@@ -68,28 +74,17 @@ async def analysis(file: UploadFile | str):
 
     
 if __name__ == "__main__":
-    from dotenv import load_dotenv
+    import common.db_connetion as db_connection
     import pymongo
-    #load env
-    load_dotenv(override=True)
-
-    MONGODB_HOST = os.getenv('MONGODB_HOST')
-    MONGODB_PORT = os.getenv('MONGODB_PORT')
-
-    #mongo uri
-    mongo_uri = f'mongodb://{MONGODB_HOST}:{MONGODB_PORT}'
-    connetion = pymongo.MongoClient(mongo_uri)
-    db = connetion["iir"]
-    collection = db["pubmed_doc"]
 
 
     file_dir = './data'
 
     xml_files = list_xml_files(file_dir)
-    batch_size = 10
+    batch_size = 200
     batch_ops = []
 
-    for xml_file_name in xml_files:
+    for xml_file_name in xml_files[:20]:
         xml_path = os.path.join(file_dir, xml_file_name)
         doc = asyncio.run(analysis(xml_path))
         if(doc == None): continue
@@ -104,11 +99,11 @@ if __name__ == "__main__":
 
         # 当批次达到10个时，执行批量操作
         if len(batch_ops) == batch_size:
-            collection.bulk_write(batch_ops)
+            db_connection.collection.bulk_write(batch_ops)
             batch_ops = []  # 清空批次
 
     # 如果最后一批不足10个，依然需要处理
     if batch_ops:
-        collection.bulk_write(batch_ops)
+        db_connection.collection.bulk_write(batch_ops)
         
             
