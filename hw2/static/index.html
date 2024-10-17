@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IIR Search</title>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="static/style.css">
+</head>
+
+<body>
+
+    <!-- <h1>IIR Search</h1> -->
+    <img src="/static/file.png" style="width: 300px;">
+
+    <div class="search-container" id="search-bar">
+        <input type="search" id="search" name="q" placeholder="Search..." />
+        <!-- Icon for uploading an image -->
+        <div class="search-icon" onclick="triggerFileInput()">
+            <img src="/static/paper-clip.svg" alt="Upload icon">
+        </div>
+
+        <!-- 顯示的檔案上傳欄位，允許多個檔案 -->
+        <div class="file-upload">
+            <input type="file" id="file-input" accept=".json,.xml" multiple onchange="handleFileUpload(event)">
+        </div>
+    </div>
+
+    <button onclick="search()">IIR Search</button>
+
+
+    <div id="upload-documents">
+        <h2>上傳資料</h2>
+        <div id="upload-documents-contents">
+        </div>
+    </div>
+
+    <div id="search-history">
+        <h2>搜尋紀錄</h2>
+        <div id="search-history-keywords">
+
+        </div>
+    </div>
+
+    <div id="search-result">
+        <h2>搜尋結果</h2>
+        <div id="search-content">
+        </div>
+        <div id="search-result-contents">
+        </div>
+    </div>
+
+    <div id="popup-search" onclick="goto_search_bar()">
+        <img src="static/search.svg" alt="search">
+    </div>
+
+    <script src="static/script.js" defer></script>
+</body>
+
+</html>

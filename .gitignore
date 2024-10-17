@@ -2,4 +2,7 @@
 *venv
 /hw1/data/*
 !/hw1/data/.gitkeep
+/hw2/data/*
+!/hw2/data/.gitkeep
 .DS_Store
+*.env
