@@ -29,8 +29,29 @@ async def analysis(file: UploadFile | str):
     dateRevisedEle = root.find(".//DateRevised")
 
     if (pmid != None) and (title!=None) and (abstract!=None) :
-        dateCompleted = datetime.strptime(''.join(dateCompletedEle.itertext()),"%Y%m%d") if dateCompletedEle else None
-        dateRevised = datetime.strptime(''.join(dateRevisedEle.itertext()),"%Y%m%d") if dateRevisedEle else None
+        dateCompleted = None
+        if(dateCompletedEle):
+            dateCompletedYearEle = dateCompletedEle.find(".//Year")
+            dateCompletedMonthEle = dateCompletedEle.find(".//Month")
+            dateCompletedDayEle = dateCompletedEle.find(".//Day")
+            if(dateCompletedYearEle and dateCompletedMonthEle and dateCompletedDayEle):
+                if(dateCompletedYearEle.text and dateCompletedMonthEle.text and dateCompletedDayEle.text):
+                    dateCompletedDate = dateCompletedYearEle.text + dateCompletedMonthEle.text + dateCompletedDayEle.text
+                    dateCompleted = datetime.strptime(dateCompletedDate,"%Y%m%d")
+        
+        dateRevised = None
+        if(dateRevisedEle):
+            dateRevisedYearEle = dateRevisedEle.find(".//Year")
+            dateRevisedMonthEle = dateRevisedEle.find(".//Month")
+            dateRevisedDayEle = dateRevisedEle.find(".//Day")
+            if(dateRevisedYearEle and dateRevisedMonthEle and dateRevisedDayEle):
+                if(dateRevisedYearEle.text and dateRevisedMonthEle.text and dateRevisedDayEle.text):
+                    dateRevisedDate = dateRevisedYearEle.text + dateRevisedMonthEle.text + dateRevisedDayEle.text
+                    dateRevised = datetime.strptime(dateRevisedDate,"%Y%m%d")
+        
+        
+        
+        
         title_text = ''.join(title.itertext())
         abstract_text = ''.join(abstract.itertext())
         nonStemInvIdx = {"title":{}, "abstract":{}} 
@@ -84,7 +105,7 @@ if __name__ == "__main__":
     batch_size = 200
     batch_ops = []
 
-    for xml_file_name in xml_files[:20]:
+    for xml_file_name in xml_files:
         xml_path = os.path.join(file_dir, xml_file_name)
         doc = asyncio.run(analysis(xml_path))
         if(doc == None): continue

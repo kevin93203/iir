@@ -10,6 +10,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="static/style.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
 </head>
 
 <body>
@@ -36,6 +38,7 @@
     <div class="tab">
         <button id="tab-search-result-btn" class="tablinks" onclick="openTab(event, 'tab-search-result')">搜尋結果</button>
         <button class="tablinks" onclick="openTab(event, 'tab-upload-documents')">資料集</button>
+        <button class="tablinks" onclick="openTab(event, 'tab-zipf-compare')">齊夫分布圖比較</button>
     </div>
 
 
@@ -65,8 +68,32 @@
         </div>
     </div>
 
+    <div id="tab-zipf-compare" class="tabcontent">
+        <div id="zipf-compare">
+            <h2>比較齊夫分布圖</h2>
+            <div class="compare-row">
+                <div id="keyword-1">
+                    <input type="text" placeholder="關鍵字1" onblur="drawKeywordZipf(event, 1)"/>
+                    <div id="keyword-1-ZipfChart" style="width: 600px;height:400px;"></div>
+                </div>
+                <div id="keyword-2">
+                    <input type="text" placeholder="關鍵字2" onblur="drawKeywordZipf(event, 2)"/>
+                    <div id="keyword-2-ZipfChart" style="width: 600px;height:400px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="popup-search" onclick="goto_search_bar()">
         <img src="static/search.svg" alt="search">
+    </div>
+
+    <div id="documet-zipf-modal" class="modal">
+        <div class="modal-content">
+          <span class="close" onclick="close_document_zipf()">&times;</span>
+          <div id="nonStemZipfChart" style="width: 500px;height:300px;"></div>
+          <div id="pStemZipfChart" style="width: 500px;height:300px;"></div>
+        </div>
     </div>
 
     <script src="static/script.js" defer></script>

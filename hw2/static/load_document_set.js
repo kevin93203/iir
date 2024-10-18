@@ -10,7 +10,7 @@ window.addEventListener('load', function() {
       })
       .then(data => {
         console.log(data);  // 處理 API 回傳的資料
-        render_document_set(data)
+        render_document_set(data['docs'])
         // // 這裡可以將資料動態顯示在頁面上
         // document.getElementById('api-data').textContent = JSON.stringify(data);
       })

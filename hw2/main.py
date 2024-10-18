@@ -1,11 +1,14 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Query
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from typing import List
+from typing import List, Literal, Optional
 import os
 import json
 import xml.etree.ElementTree as ET
 from datetime import datetime
+from math import ceil
+from pydantic import BaseModel
+
 import se
 import file_process
 import model
@@ -91,18 +94,6 @@ async def upload_files2(files: List[UploadFile] = File(...)):
     return docs
     
     
-
-@app.post("/api/search/")
-async def search_documents(query:str, data:model.Data):
-    keywords, highlighted_documents, highlighted_titles, rank = se.highlight_query(query, data)
-    return {
-        "query": query,
-        "query_keywords": keywords,
-        "highlighted_documents": highlighted_documents,
-        "highlighted_titles": highlighted_titles,
-        "rank": rank
-    }
-
 from nltk.stem import PorterStemmer
 from nltk.corpus import stopwords
 import re
@@ -126,15 +117,32 @@ def get_query_keywords(query:str, stemmer:PorterStemmer | None = None):
 
     return query_keywords
 
-def getQueryFilter(query_keywords: list[str]):
+def getQueryFilter(
+    query_keywords: list[str], 
+    invIdxKey: Literal['pStemInvIdx','nonStemInvIdx']
+):
     or_list = []
     for word in query_keywords:
-        or_list.append({ f"pStemInvIdx.title.{word}": { "$exists": True } })
-        or_list.append({ f"pStemInvIdx.abstract.{word}": { "$exists": True } })
+        or_list.append({ f"{invIdxKey}.title.{word}": { "$exists": True } })
+        or_list.append({ f"{invIdxKey}.abstract.{word}": { "$exists": True } })
     
     return {"$or": or_list}
 
-def getProjection(query_keywords: list[str]):
+def getAllWordFreqField(
+    query_keywords: list[str], 
+    invIdxKey: Literal['pStemInvIdx','nonStemInvIdx']     
+):
+    all_word_field = []
+    for word in query_keywords:
+        all_word_field.append(f"${invIdxKey}.title.{word}.freq")
+        all_word_field.append(f"${invIdxKey}.abstract.{word}.freq")
+    return all_word_field
+
+def getProjection(
+    query_keywords: list[str],
+    invIdxKey: Literal['pStemInvIdx','nonStemInvIdx'],
+    full_abstract_InvIdx: bool,
+):
     projection = {
         "_id":0, 
         "pmid":1, 
@@ -142,9 +150,14 @@ def getProjection(query_keywords: list[str]):
         "abstract":1, 
         "dateCompleted":1
     }
+
+    if(full_abstract_InvIdx):
+        projection[f"{invIdxKey}.abstract"] = 1
+        return projection
+    
     for word in query_keywords:
-        projection[f"pStemInvIdx.title.{word}"] = 1
-        projection[f"pStemInvIdx.abstract.{word}"] = 1
+        projection[f"{invIdxKey}.title.{word}"] = 1
+        projection[f"{invIdxKey}.abstract.{word}"] = 1
     
     return projection
 
@@ -202,45 +215,201 @@ def dateCompleteToString(docs:list[dict]):
             doc['dateCompleted'] = doc['dateCompleted'].strftime("%Y-%m-%d")
     return docs
 
-@app.get("/api/search/v2")
-async def search_documents_v2(query:str, usePorterStem:bool=True):
+def search_documents(query:str, usePorterStem:bool, full_abstract_InvIdx:bool = False):
     stemmer = PorterStemmer() if usePorterStem else None
     query_keywords = get_query_keywords(query, stemmer)
-    query_filter = getQueryFilter(query_keywords)
-    projection = getProjection(query_keywords)
+    
+    invIdxKey = "pStemInvIdx" if stemmer else "nonStemInvIdx"
+    query_filter = getQueryFilter(query_keywords, invIdxKey)
+    projection = getProjection(query_keywords, invIdxKey, full_abstract_InvIdx)
     result = db_connetion.collection.find(
         query_filter,
         projection
     )
     docs = list(result)
+    return docs, query_keywords, stemmer
+
+def search_documents_page(
+    query:str, 
+    usePorterStem:bool, 
+    page: int,
+    page_size: int,
+    full_abstract_InvIdx:bool = False
+):
+    stemmer = PorterStemmer() if usePorterStem else None
+    query_keywords = get_query_keywords(query, stemmer)
+    
+    invIdxKey = "pStemInvIdx" if stemmer else "nonStemInvIdx"
+    query_filter = getQueryFilter(query_keywords, invIdxKey)
+    all_word_freq_field = getAllWordFreqField(query_keywords, invIdxKey)
+    print("all_word_freq_field: ", all_word_freq_field)
+    projection = getProjection(query_keywords, invIdxKey, full_abstract_InvIdx)
+    projection["match_count"] = 1
+    count_pipeline = [{"$match": query_filter},{"$count": "total"}]
+    # 獲取總數
+    count_result = list(db_connetion.collection.aggregate(count_pipeline))
+    total_docs:int = count_result[0]["total"] if count_result else 0
+    print("total_docs: ",total_docs)
+    
+    # 計算總頁數
+    total_pages = ceil(total_docs / page_size)
+
+    pipeline = [
+        {"$match": query_filter},
+        {
+            "$addFields": {
+                "match_count": { 
+                    "$add": all_word_freq_field
+                }
+            }
+        },
+        {"$sort": {"match_count": -1}},
+        {"$skip": (page - 1) * page_size},
+        {"$limit": page_size},
+        {"$project": projection}
+    ]
+    
+    docs = list(db_connetion.collection.aggregate(pipeline))
+
+    return docs, query_keywords, stemmer, total_docs, total_pages
+
+class PaginatedResponse(BaseModel):
+    docs: List[dict]
+    total: int
+    total_pages: int
+    current_page: int
+    page_size: int
+    query: str | None = None
+    query_keywords: list[str] | None = None
+
+@app.get("/api/search")
+async def search_documents_content(
+    query:str, 
+    usePorterStem:bool=True,
+    page: int = Query(1, ge=1, description="當前頁碼"),
+    page_size: int = Query(12, ge=1, le=100, description="每頁數量"),
+):
+    docs, query_keywords, stemmer, total_docs, total_pages = \
+         search_documents_page(query, usePorterStem, page, page_size)
     docs = highlight_query_in_documents(query_keywords, docs, stemmer)
     # 將dateCompleted轉為"yyyy-mm-dd""
     docs = dateCompleteToString(docs)
-    
-    return {
-        "query": query,
-        "query_keywords": query_keywords,
-        "docs": docs,
-    }
+
+    return PaginatedResponse(
+        docs=docs,
+        total=total_docs,
+        total_pages=total_pages,
+        current_page=page,
+        page_size=page_size,
+        query=query,
+        query_keywords=query_keywords
+    )
+
+def invIdxToWordsAndFrequencies(invIdx:dict[str,dict]):
+    words = list(invIdx.keys())
+    words = sorted(words, key= lambda x: invIdx[x]['freq'],reverse=True)
+    frequencies = []
+    for word in words:
+        frequencies.append(invIdx[word]["freq"])
+    return {"words": words, "frequencies": frequencies}
 
 @app.get("/api/document_set/")
-async def document_set():
-    result = db_connetion.collection.find(
-        {},
-        {
+async def document_set(
+    page: int = Query(1, ge=1, description="當前頁碼"),
+    page_size: int = Query(12, ge=1, le=100, description="每頁數量"),
+):
+    query_filter = {}
+    projection = {
             "_id":0, 
             "pmid":1, 
             "title": 1, 
             "abstract":1, 
             "statistics":1, 
-            "dateCompleted":1
-        }
-    )
-    docs = list(result)
+            "dateCompleted":1,
+            "pStemInvIdx.abstract":1,
+            "nonStemInvIdx.abstract":1,
+    }
+
+    # 計算總數量
+    total_docs = db_connetion.collection.count_documents(query_filter)
+    
+    # 計算總頁數
+    total_pages = ceil(total_docs / page_size)
+    
+    # 計算跳過的數量
+    skip = (page - 1) * page_size
+    
+    # 查詢數據
+    docs = list(db_connetion.collection
+        .find(query_filter,projection)
+        .skip(skip)
+        .limit(page_size))
+
+    # invIdxToWordsAndFrequencies(docs[0]['pStemInvIdx']['abstract'])
+
+    for doc in docs:
+        doc['pStemZipf'] = invIdxToWordsAndFrequencies(doc['pStemInvIdx']['abstract'])
+        doc['nonStemZipf'] = invIdxToWordsAndFrequencies(doc['nonStemInvIdx']['abstract'])
+    
+    #docs濾除invIdx
+    docs = [{k: v for k, v in d.items() if k not in ["pStemInvIdx","nonStemInvIdx"]} for d in docs]
+
 
     # 將dateCompleted轉為"yyyy-mm-dd""
     docs = dateCompleteToString(docs)
-    return docs
+
+    return PaginatedResponse(
+        docs=docs,
+        total=total_docs,
+        total_pages=total_pages,
+        current_page=page,
+        page_size=page_size
+    )
+
+@app.get("/api/document/zipf")
+async def document_zipf(pmid:str):
+    doc:dict | None = db_connetion.collection.find_one(
+        {"pmid":pmid},
+        {
+            "pStemInvIdx.abstract":1,
+            "nonStemInvIdx.abstract":1,
+        }
+    )
+    if doc == None:
+        return
+    
+    pStemZipf = invIdxToWordsAndFrequencies(doc['pStemInvIdx']['abstract'])
+    nonStemZipf = invIdxToWordsAndFrequencies(doc['nonStemInvIdx']['abstract'])
+
+    return {
+        "pStemZipf": pStemZipf,
+        "nonStemZipf": nonStemZipf
+    }
+
+@app.get("/api/search/zipf")
+async def search_zipf(query:str, usePorterStem:bool=True):
+    if not query: return
+    docs, _, _ = search_documents(query, usePorterStem, True)
+    invIdxKey = "pStemInvIdx" if usePorterStem else "nonStemInvIdx"
+    
+    words_frequencies ={}
+    for doc in docs:
+        abstract_invIdx =  doc[invIdxKey]['abstract']
+        for word in abstract_invIdx:
+            if(word in words_frequencies):
+                words_frequencies[word] += abstract_invIdx[word]['freq']
+            else:
+                words_frequencies[word] = abstract_invIdx[word]['freq']
+    
+    words_freq_list = [{"word": word, "freq": words_frequencies[word]} for word in  words_frequencies]
+    words_freq_list.sort(key=lambda x: x['freq'], reverse=True)
+    words = [ item['word'] for item in words_freq_list]
+    frequencies = [ item['freq'] for item in words_freq_list]
+    
+    return {
+        "words": words,
+        "frequencies": frequencies
+    }
 
 if __name__ == "__main__":
     import uvicorn

@@ -19,7 +19,7 @@ async function search() {
         return;
     }
     try {
-        const response = await fetch(`/api/search/v2/?query=${query}&usePorterStem=true`);
+        const response = await fetch(`/api/search/?query=${query}&usePorterStem=true`);
         if (response.ok) {
             const data = await response.json(); // 取得 JSON 資料
             console.log(data)
