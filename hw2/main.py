@@ -233,7 +233,7 @@ def search_documents_page(
     query:str, 
     usePorterStem:bool, 
     page: int,
-    page_size: int,
+    pageSize: int,
     full_abstract_InvIdx:bool = False
 ):
     stemmer = PorterStemmer() if usePorterStem else None
@@ -248,11 +248,11 @@ def search_documents_page(
     count_pipeline = [{"$match": query_filter},{"$count": "total"}]
     # 獲取總數
     count_result = list(db_connetion.collection.aggregate(count_pipeline))
-    total_docs:int = count_result[0]["total"] if count_result else 0
-    print("total_docs: ",total_docs)
+    totalDocs:int = count_result[0]["total"] if count_result else 0
+    print("totalDocs: ",totalDocs)
     
     # 計算總頁數
-    total_pages = ceil(total_docs / page_size)
+    totalPages = ceil(totalDocs / pageSize)
 
     pipeline = [
         {"$match": query_filter},
@@ -264,21 +264,21 @@ def search_documents_page(
             }
         },
         {"$sort": {"match_count": -1}},
-        {"$skip": (page - 1) * page_size},
-        {"$limit": page_size},
+        {"$skip": (page - 1) * pageSize},
+        {"$limit": pageSize},
         {"$project": projection}
     ]
     
     docs = list(db_connetion.collection.aggregate(pipeline))
 
-    return docs, query_keywords, stemmer, total_docs, total_pages
+    return docs, query_keywords, stemmer, totalDocs, totalPages
 
 class PaginatedResponse(BaseModel):
-    docs: List[dict]
+    items: List[dict]
     total: int
-    total_pages: int
+    totalPages: int
     current_page: int
-    page_size: int
+    pageSize: int
     query: str | None = None
     query_keywords: list[str] | None = None
 
@@ -287,20 +287,20 @@ async def search_documents_content(
     query:str, 
     usePorterStem:bool=True,
     page: int = Query(1, ge=1, description="當前頁碼"),
-    page_size: int = Query(12, ge=1, le=100, description="每頁數量"),
+    pageSize: int = Query(12, ge=1, le=100, description="每頁數量"),
 ):
-    docs, query_keywords, stemmer, total_docs, total_pages = \
-         search_documents_page(query, usePorterStem, page, page_size)
+    docs, query_keywords, stemmer, totalDocs, totalPages = \
+         search_documents_page(query, usePorterStem, page, pageSize)
     docs = highlight_query_in_documents(query_keywords, docs, stemmer)
     # 將dateCompleted轉為"yyyy-mm-dd""
     docs = dateCompleteToString(docs)
 
     return PaginatedResponse(
-        docs=docs,
-        total=total_docs,
-        total_pages=total_pages,
+        items=docs,
+        total=totalDocs,
+        totalPages=totalPages,
         current_page=page,
-        page_size=page_size,
+        pageSize=pageSize,
         query=query,
         query_keywords=query_keywords
     )
@@ -316,7 +316,7 @@ def invIdxToWordsAndFrequencies(invIdx:dict[str,dict]):
 @app.get("/api/document_set/")
 async def document_set(
     page: int = Query(1, ge=1, description="當前頁碼"),
-    page_size: int = Query(12, ge=1, le=100, description="每頁數量"),
+    pageSize: int = Query(12, ge=1, le=100, description="每頁數量"),
 ):
     query_filter = {}
     projection = {
@@ -331,19 +331,19 @@ async def document_set(
     }
 
     # 計算總數量
-    total_docs = db_connetion.collection.count_documents(query_filter)
+    totalDocs = db_connetion.collection.count_documents(query_filter)
     
     # 計算總頁數
-    total_pages = ceil(total_docs / page_size)
+    totalPages = ceil(totalDocs / pageSize)
     
     # 計算跳過的數量
-    skip = (page - 1) * page_size
+    skip = (page - 1) * pageSize
     
     # 查詢數據
     docs = list(db_connetion.collection
         .find(query_filter,projection)
         .skip(skip)
-        .limit(page_size))
+        .limit(pageSize))
 
     # invIdxToWordsAndFrequencies(docs[0]['pStemInvIdx']['abstract'])
 
@@ -359,11 +359,11 @@ async def document_set(
     docs = dateCompleteToString(docs)
 
     return PaginatedResponse(
-        docs=docs,
-        total=total_docs,
-        total_pages=total_pages,
+        items=docs,
+        total=totalDocs,
+        totalPages=totalPages,
         current_page=page,
-        page_size=page_size
+        pageSize=pageSize
     )
 
 @app.get("/api/document/zipf")

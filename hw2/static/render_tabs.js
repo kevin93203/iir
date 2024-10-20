@@ -1,8 +1,36 @@
-function render_document_set(data) {
-    const documents_results = document.getElementById("upload-documents-contents");
-    documents_results.innerHTML = '';
-    
-    data.forEach(item => {
+function createElementFromHTML(htmlString) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlString, 'text/html');
+    return doc.body.firstChild; // 返回解析後的第一個子元素
+}
+
+// 資料集分頁manager
+const dataSetPaginationManager = new PaginationManager({
+    initialPage: 1,
+    totalPages: 300,
+    elements: {
+        container: '#upload-documents',
+        list: '#upload-documents-contents',
+        prevButton: '#prevButton',
+        nextButton: '#nextButton',
+        pageInput: '#pageInput',
+        totalPages: '#totalPages',
+        errorMessage: '#upload-documents-error-msg'
+    },
+
+    // 自定義獲取數據的函數
+    fetchData: async (page) => {
+        // 示例：從實際 API 獲取數據
+        const response = await fetch(`/api/document_set/?page=${page}&page_size=12`);
+        const data = await response.json();
+        return {
+            items: data.items,
+            totalPages: data.totalPages
+        };
+    },
+
+    // 自定義項目渲染
+    renderItem: (item) => {
         const {pmid, title, abstract, dateCompleted, statistics} = item
         const {
             characters_excluding_spaces,
@@ -12,9 +40,7 @@ function render_document_set(data) {
             sentences,
             words,
         } = statistics
-        documents_results.insertAdjacentHTML(
-            'beforeend',
-            `
+        const htmlString = `
             <div class='document-wrapper'>
                 <div class='document-content-container'> 
                     <div class='document-filename'>${pmid}</div>
@@ -35,11 +61,92 @@ function render_document_set(data) {
                     </div>
                 </div>
             </div>
+        `
+        const element = createElementFromHTML(htmlString);
+        return element
+    },
+
+    // 事件回調
+    onPageChange: (page) => {
+        console.log(`Page changed to ${page}`);
+    },
+
+    onError: (error) => {
+        console.error('Data loading failed:', error);
+    },
+
+    onDataLoaded: (data) => {
+        console.log('Data loaded successfully:', data);
+    }
+});
+
+function createNewSearchPaginationManager(query){
+    // 搜尋結果分頁manager
+    const searchPaginationManager = new PaginationManager({
+        elements: {
+            container: '#search-result',
+            list: '#search-result-contents',
+            prevButton: '#search-prevButton',
+            nextButton: '#search-nextButton',
+            pageInput: '#search-pageInput',
+            totalPages: '#search-totalPages',
+            errorMessage: '#search-error-msg',
+        },
+
+        noDataErrorMessage: "搜尋不到任何結果！",
+        // 自定義獲取數據的函數
+        fetchData: async (page) => {
+            // 示例：從實際 API 獲取數據
+            const response = await fetch(`/api/search?query=${query}&usePorterStem=true&page=${page}&pageSize=12`);
+            const data = await response.json();
+            return {
+                items: data.items,
+                totalPages: data.totalPages
+            };
+        },
+
+        // 自定義項目渲染
+        renderItem: (item) => {
+            const {pmid, title, abstract, dateCompleted, match_count} = item
+            const htmlString = `
+            <div class='document-wrapper'>
+                <div class='document-ranking'>
+                    <div class='filename'>
+                        ${pmid}
+                    </div>
+                    <div class='match-count'>
+                        匹配數: ${match_count}
+                    </div>
+                </div>
+                <div class='document-content-container'>
+                    <div class='document-content'>
+                        <h2 class='document-title'>${title}</h2>
+                        <p>${abstract}</p>
+                    </div>
+                </div>
+            </div>
             `
-        );
+            const element = createElementFromHTML(htmlString);
+            return element
+        },
+
+        // 事件回調
+        onPageChange: (page) => {
+            console.log(`Page changed to ${page}`);
+        },
+
+        onError: (error) => {
+            console.error('Data loading failed:', error);
+        },
+
+        onDataLoaded: (data) => {
+            console.log('Data loaded successfully:', data);
+        }
     });
-    toggleAllElements()
+
+    return searchPaginationManager
 }
+
 
 
 
@@ -87,6 +194,11 @@ function drawZipfChart(data, chart_id, title, color='#5470C6'){
 
     // 使用指定的配置和數據來顯示圖表
     myChart.setOption(option);
+
+    // 監聽窗口大小變化，並調整圖表大小
+    window.addEventListener('resize', function() {
+        myChart.resize();
+    });
 }
 
 function open_document_zipf(pmid){
@@ -115,7 +227,7 @@ function close_document_zipf(){
 }
 
 function render_search_result(data) {
-    const {query, query_keywords, docs} = data
+    const {query, query_keywords, items} = data
     const documents_results = document.getElementById("search-result-contents");
     documents_results.innerHTML = '';
     const search_content = document.getElementById("search-content")
@@ -128,13 +240,13 @@ function render_search_result(data) {
             <div>關鍵字字數: ${query_keywords.length}</div>
         `
     )
-    if(docs.length === 0){
+    if(items.length === 0){
         documents_results.innerHTML = "<p>搜尋不到任何結果！<p>";
         toggleAllElements();
     } 
     else {
         let i = 1
-        docs.forEach(item => {
+        items.forEach(item => {
             const {pmid, title, abstract, dateCompleted, match_count} = item
             documents_results.insertAdjacentHTML(
                 'beforeend',
@@ -167,8 +279,6 @@ function render_search_result(data) {
 }
 
 function drawKeywordZipf(event, keyword_id){
-    console.log(event.target.value)
-    console.log(keyword_id)
     const query = event.target.value
 
     // 使用 fetch 查詢 API

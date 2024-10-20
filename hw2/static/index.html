@@ -42,86 +42,86 @@
     </div>
 
 
+    <!-- 資料集 -->
     <div id="tab-upload-documents" class="tabcontent">
         <div id="upload-documents">
             <h2>上傳資料</h2>
+            <div id="upload-documents-error-msg"></div>
             <div id="upload-documents-contents">
             </div>
         </div>
-    </div>
-    
-    <div class="tab-content-wrapper">
-        <div id="tab-search-result" class="tabcontent">
-            <div id="search-history">
-                <h2>搜尋紀錄</h2>
-                <div id="search-history-keywords">
-
-                </div>
+        <div class="pagination">
+            <button id="prevButton"><i class="arrow arrow-left"></i></button>
+            <div class="page-info">
+                <input type="number" id="pageInput" class="page-input" value="1" min="1">
+                <span class="page-total">of <span id="totalPages"></span></span>
             </div>
-            <div id="search-result">
-                <h2>搜尋結果</h2>
-                <div id="search-content">
-                </div>
-                <div id="search-result-contents">
-                </div>
-            </div>
+            <button id="nextButton"><i class="arrow arrow-right"></i></button>
         </div>
     </div>
 
+    <!-- 搜尋結果 -->
+    <div id="tab-search-result" class="tabcontent">
+        <div id="search-history">
+            <h2>搜尋紀錄</h2>
+            <div id="search-history-keywords">
+
+            </div>
+        </div>
+        <div id="search-result">
+            <h2>搜尋結果</h2>
+            <div id="search-content">
+            </div>
+            <div id="search-error-msg"></div>
+            <div id="search-result-contents">
+            </div>
+        </div>
+        <div class="pagination">
+            <button id="search-prevButton"><i class="arrow arrow-left"></i></button>
+            <div class="page-info">
+                <input type="number" id="search-pageInput" class="page-input" value="1" min="1">
+                <span class="page-total">of <span id="search-totalPages"></span></span>
+            </div>
+            <button id="search-nextButton"><i class="arrow arrow-right"></i></button>
+        </div>
+    </div>
+
+    <!-- 齊夫分布圖比較 -->
     <div id="tab-zipf-compare" class="tabcontent">
         <div id="zipf-compare">
             <h2>比較齊夫分布圖</h2>
             <div class="compare-row">
                 <div id="keyword-1">
-                    <input type="text" placeholder="關鍵字1" onblur="drawKeywordZipf(event, 1)"/>
-                    <div id="keyword-1-ZipfChart" style="width: 600px;height:400px;"></div>
+                    <input id="keyword-1-input" type="text" placeholder="關鍵字1" onblur="drawKeywordZipf(event, 1)" />
+                    <div id="keyword-1-ZipfChart" style="width: 100%;height:400px;"></div>
                 </div>
                 <div id="keyword-2">
-                    <input type="text" placeholder="關鍵字2" onblur="drawKeywordZipf(event, 2)"/>
-                    <div id="keyword-2-ZipfChart" style="width: 600px;height:400px;"></div>
+                    <input id="keyword-2-input" type="text" placeholder="關鍵字2" onblur="drawKeywordZipf(event, 2)" />
+                    <div id="keyword-2-ZipfChart" style="width: 100%;height:400px;"></div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- 搜尋按鈕pop up -->
     <div id="popup-search" onclick="goto_search_bar()">
         <img src="static/search.svg" alt="search">
     </div>
 
+    <!-- 資料集齊夫分布圖modal -->
     <div id="documet-zipf-modal" class="modal">
         <div class="modal-content">
-          <span class="close" onclick="close_document_zipf()">&times;</span>
-          <div id="nonStemZipfChart" style="width: 500px;height:300px;"></div>
-          <div id="pStemZipfChart" style="width: 500px;height:300px;"></div>
+            <span class="close" onclick="close_document_zipf()">&times;</span>
+            <div id="nonStemZipfChart" style="width: 100%;height:300px;"></div>
+            <div id="pStemZipfChart" style="width: 100%;height:300px;"></div>
         </div>
     </div>
 
     <script src="static/script.js" defer></script>
+    <script src="static/tabs.js" defer></script>
+    <script src="static/pagination.js" defer></script>
     <script src="static/render_tabs.js" defer></script>
-    <script src="static/load_document_set.js" defer></script>
     <script src="static/search_documents.js" defer></script>
-    <script>
-        function openTab(evt, tabID) {
-            // Declare all variables
-            var i, tabcontent, tablinks;
-
-            // Get all elements with class="tabcontent" and hide them
-            tabcontent = document.getElementsByClassName("tabcontent");
-            for (i = 0; i < tabcontent.length; i++) {
-                tabcontent[i].style.display = "none";
-            }
-
-            // Get all elements with class="tablinks" and remove the class "active"
-            tablinks = document.getElementsByClassName("tablinks");
-            for (i = 0; i < tablinks.length; i++) {
-                tablinks[i].className = tablinks[i].className.replace(" active", "");
-            }
-
-            // Show the current tab, and add an "active" class to the button that opened the tab
-            document.getElementById(tabID).style.display = "block";
-            evt.currentTarget.className += " active";
-        }
-    </script>
 </body>
 
 </html>

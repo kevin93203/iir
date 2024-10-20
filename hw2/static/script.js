@@ -4,16 +4,6 @@ function triggerFileInput() {
     document.getElementById('file-input').click();  // 觸發檔案上傳
 }
 
-function show_or_hide(ele) {
-    if (ele.innerHTML === "隱藏上傳資料") {
-        document.getElementById('upload-documents').style.display = 'none';
-        ele.innerHTML = "顯示上傳資料"
-    } else {
-        document.getElementById('upload-documents').style.display = 'block';
-        ele.innerHTML = "隱藏上傳資料"
-    }
-}
-
 async function handleFileUpload(event) {
     const files = event.target.files;
     if (!files.length) {
@@ -48,25 +38,6 @@ async function handleFileUpload(event) {
     }
 }
 
-function toggleAllElements(){
-    toggleElements('upload-documents', 'upload-documents-contents')
-    toggleElements('search-history', 'search-history-keywords')
-    toggleElements('search-result', 'search-result-contents')
-}
-
-function toggleElements(parent_id, child_id) {
-    const parentElement = document.getElementById(parent_id);
-    const childElement = document.getElementById(child_id);
-
-    if (childElement.children.length === 0) {
-        parentElement.style.display = 'none';
-    } else {
-        parentElement.style.display = 'flex';
-    }
-}
-
-// 初次頁面載入時執行
-document.addEventListener("DOMContentLoaded", toggleAllElements);
 
 // 監聽 keydown 事件
 document.getElementById("search").addEventListener('keydown', function(event) {
@@ -74,6 +45,22 @@ document.getElementById("search").addEventListener('keydown', function(event) {
     if (event.key === 'Enter') {
         this.blur();
         search();
+    }
+});
+
+// 監聽 keydown 事件
+document.getElementById("keyword-1-input").addEventListener('keydown', function(event) {
+    // 檢查是否按下 Enter 鍵
+    if (event.key === 'Enter') {
+        this.blur();
+    }
+});
+
+// 監聽 keydown 事件
+document.getElementById("keyword-2-input").addEventListener('keydown', function(event) {
+    // 檢查是否按下 Enter 鍵
+    if (event.key === 'Enter') {
+        this.blur();
     }
 });
 
