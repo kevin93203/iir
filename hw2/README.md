@@ -1,40 +1,39 @@
-# PubMed, Twitter 文件搜尋引擎
-## 功能簡介
-1. 可以上傳檔案，檔案類型支援Pubmed的xml格式和twitter的json格式
-2. 對所有上傳文件做統計包含characters (including spaces)、characters (excluding spaces)、words、sentences、non-ASCII characters、non-ASCII words，並且顯示文件原文
-3. 提供搜尋框讓用者可以輸入關鍵字或句子做搜尋，搜尋後會顯示文章內有包含關鍵字的文件，並且關鍵字出現的位置會以高亮提示
-4. 搜尋結果會依照關鍵字在文件出現的次數由多到少做排序
-5. 保存搜尋紀錄，使用者可一鍵查看過去的搜尋結果
-6. 顯示搜尋的關鍵字原文、詞幹、詞幹數（關鍵字字數）
+## PubMed 文件搜尋引擎
+### 功能簡介
+1. 搜尋框
+    - 可以輸入關鍵字或句子做搜尋，比對內容包含標題、摘要、PMID
+    - 可以勾選是否要提取詞幹 
+    - 可以篩選日期
 
-## 操作流程
-1. 點選迴紋針圖示上傳檔案（可多檔案同時上傳）
-2. 查看上傳的文件內文和各統計量
-3. 到搜尋框輸入關鍵字查詢
-4. 查看搜尋結果
-5. 點選搜尋紀錄可查看過去搜尋的結果
+2. 搜尋結果
+    - 分頁顯示搜尋結果，包含PMID、日期、標題、摘要、齊夫分布圖
+    - 結果依照出現關鍵字次數由多到少排列
+    - 關鍵字以高量顯示
+    - 保留搜尋紀錄
 
-## 實作細節
+3. 資料集
+    - 分頁顯示所有資料集，包含PMID、日期、標題、摘要、各統計值、齊夫分布圖
+    - 可上傳及刪除文件(僅支援PubMed XML格式)
+
+4. 齊夫分布圖
+    - 可以輸入兩組關鍵字來比對兩組的齊夫分布圖
+    - 關鍵字比對內容包含標題、摘要、PMID
+
+### 實作細節
 1. 使用web網頁開發
 2. 前後端分離，後端API使用python fastapi，前端使用原生javascript、css
 3. 使用正則表達式提取詞，再使用nltk內的PorterStemmer提取詞幹，並且去除stop words和punctuation
-4. 對所有文件建立Inverted Index，（詞、文件編號、詞出現在第幾個字），用以快速查找所有文件
-4. 尚未使用DB做任何資料存取，資料全部存取在網頁的memory（JS變數）
+4. 對所有文件建立Inverted Index，（詞、詞出現在第幾個字、出現次數）
+5. 資料存放於MongoDB
+6. 使用ECharts繪製圖表
 
-## 執行方式
-1. 
-```shell
-cd hw1
-```
-
-2. 
-```shell
-pip install -r requirements.txt
-```
-
-3.
-```shell
-python main.py
-```
-
-4. 開啟網址: http://localhost:8000
+### 執行方式
+1. 啟用MongoDB
+2. 創建.env檔並且輸入MongoDB的host和port
+3. ```shell
+    pip install -r requirements.txt
+    ```
+4. ```shell
+    python main.py
+    ```
+5. 開啟網址: http://localhost:8000
