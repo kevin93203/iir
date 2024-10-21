@@ -123,6 +123,7 @@ def getQueryFilter(
 ):
     or_list = []
     for word in query_keywords:
+        or_list.append({ "pmid": word })
         or_list.append({ f"{invIdxKey}.title.{word}": { "$exists": True } })
         or_list.append({ f"{invIdxKey}.abstract.{word}": { "$exists": True } })
     
@@ -148,7 +149,7 @@ def getProjection(
         "pmid":1, 
         "title": 1, 
         "abstract":1, 
-        "dateCompleted":1
+        "articleDate":1
     }
 
     if(full_abstract_InvIdx):
@@ -209,10 +210,10 @@ def highlight_query_in_documents(
     
     return docs
 
-def dateCompleteToString(docs:list[dict]):
+def articleDateToString(docs:list[dict]):
     for doc in docs:
-        if(isinstance(doc['dateCompleted'], datetime)):
-            doc['dateCompleted'] = doc['dateCompleted'].strftime("%Y-%m-%d")
+        if(isinstance(doc['articleDate'], datetime)):
+            doc['articleDate'] = doc['articleDate'].strftime("%Y-%m-%d")
     return docs
 
 def search_documents(query:str, usePorterStem:bool, full_abstract_InvIdx:bool = False):
@@ -221,6 +222,7 @@ def search_documents(query:str, usePorterStem:bool, full_abstract_InvIdx:bool = 
     
     invIdxKey = "pStemInvIdx" if stemmer else "nonStemInvIdx"
     query_filter = getQueryFilter(query_keywords, invIdxKey)
+    print(query_filter)
     projection = getProjection(query_keywords, invIdxKey, full_abstract_InvIdx)
     result = db_connetion.collection.find(
         query_filter,
@@ -292,8 +294,8 @@ async def search_documents_content(
     docs, query_keywords, stemmer, totalDocs, totalPages = \
          search_documents_page(query, usePorterStem, page, pageSize)
     docs = highlight_query_in_documents(query_keywords, docs, stemmer)
-    # 將dateCompleted轉為"yyyy-mm-dd""
-    docs = dateCompleteToString(docs)
+    # 將articleDate轉為"yyyy-mm-dd""
+    docs = articleDateToString(docs)
 
     return PaginatedResponse(
         items=docs,
@@ -325,7 +327,7 @@ async def document_set(
             "title": 1, 
             "abstract":1, 
             "statistics":1, 
-            "dateCompleted":1,
+            "articleDate":1,
             "pStemInvIdx.abstract":1,
             "nonStemInvIdx.abstract":1,
     }
@@ -355,8 +357,8 @@ async def document_set(
     docs = [{k: v for k, v in d.items() if k not in ["pStemInvIdx","nonStemInvIdx"]} for d in docs]
 
 
-    # 將dateCompleted轉為"yyyy-mm-dd""
-    docs = dateCompleteToString(docs)
+    # 將articleDate轉為"yyyy-mm-dd""
+    docs = articleDateToString(docs)
 
     return PaginatedResponse(
         items=docs,

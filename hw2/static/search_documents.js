@@ -2,18 +2,6 @@ let search_history = []
 const history_pagination_managers = []
 let current_history_idx = null;
 
-function go_to_search_result(){
-    // 取得你要滾動到的元素
-    const element = document.getElementById('search-result');
-
-    // 使用 scrollIntoView 滾動到該元素
-    element.scrollIntoView({
-        behavior: 'smooth', // 平滑滾動 (也可以設為 'auto')
-        block: 'start',     // 滾動到元素的頂部 ('end' 會滾動到底部)
-        inline: 'nearest'   // 水平滾動行為
-    });
-}
-
 async function search() {
     // 停止監聽先前的歷史查詢
     if(current_history_idx!==null){
@@ -75,7 +63,6 @@ function add_history(history_no, query){
                 class="history"
                 onclick="
                     switchSearchReuslt(${history_no});
-                    go_to_search_result();
                 "
             >
                 ${query}

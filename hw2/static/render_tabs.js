@@ -1,3 +1,9 @@
+let usePorterStem = true
+
+function changeUseStem(evt) {
+    usePorterStem = evt.target.checked;
+}
+
 function createElementFromHTML(htmlString) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlString, 'text/html');
@@ -15,7 +21,7 @@ const dataSetPaginationManager = new PaginationManager({
         nextButton: '#nextButton',
         pageInput: '#pageInput',
         totalPages: '#totalPages',
-        errorMessage: '#upload-documents-error-msg'
+        resultMesssage: '#upload-documents-msg'
     },
 
     // 自定義獲取數據的函數
@@ -25,13 +31,14 @@ const dataSetPaginationManager = new PaginationManager({
         const data = await response.json();
         return {
             items: data.items,
+            total: data.total,
             totalPages: data.totalPages
         };
     },
 
     // 自定義項目渲染
     renderItem: (item) => {
-        const {pmid, title, abstract, dateCompleted, statistics} = item
+        const {pmid, title, abstract, articleDate, statistics} = item
         const {
             characters_excluding_spaces,
             characters_including_spaces,
@@ -42,13 +49,20 @@ const dataSetPaginationManager = new PaginationManager({
         } = statistics
         const htmlString = `
             <div class='document-wrapper'>
+                <div class='document-header'>
+                    <div class='pmid'>
+                        PMID: ${pmid}
+                    </div>
+                </div>
                 <div class='document-content-container'> 
-                    <div class='document-filename'>${pmid}</div>
                     <div class='document-content'>
-                        <div class='document-stats'>
+                        <div class='date-zipf-container'>
+                            <p class='articleDate'>${articleDate ? articleDate : ''}</p>
                             <div class='document-zipf' onclick="open_document_zipf('${pmid}')">
                                 <img src="/static/chart.svg" alt="chart icon">
                             </div>
+                        </div> 
+                        <div class='document-stats'>
                             <div>characters (including spaces): <strong>${characters_including_spaces}</strong></div>
                             <div>characters (excluding spaces): <strong>${characters_excluding_spaces}</strong></div>
                             <div>words: <strong>${words}</strong></div>
@@ -90,29 +104,30 @@ function createNewSearchPaginationManager(query){
             nextButton: '#search-nextButton',
             pageInput: '#search-pageInput',
             totalPages: '#search-totalPages',
-            errorMessage: '#search-error-msg',
+            resultMesssage: '#search-result-msg',
         },
 
         noDataErrorMessage: "搜尋不到任何結果！",
         // 自定義獲取數據的函數
         fetchData: async (page) => {
             // 示例：從實際 API 獲取數據
-            const response = await fetch(`/api/search?query=${query}&usePorterStem=true&page=${page}&pageSize=12`);
+            const response = await fetch(`/api/search?query=${query}&usePorterStem=${usePorterStem}&page=${page}&pageSize=12`);
             const data = await response.json();
             return {
                 items: data.items,
+                total: data.total,
                 totalPages: data.totalPages
             };
         },
 
         // 自定義項目渲染
         renderItem: (item) => {
-            const {pmid, title, abstract, dateCompleted, match_count} = item
+            const {pmid, title, abstract, articleDate, match_count} = item
             const htmlString = `
-            <div class='document-wrapper'>
-                <div class='document-ranking'>
-                    <div class='filename'>
-                        ${pmid}
+            <div class='document-wrapper search-result-wrapper'>
+                <div class='document-header'>
+                    <div class='pmid'>
+                        PMID: ${pmid}
                     </div>
                     <div class='match-count'>
                         匹配數: ${match_count}
@@ -120,6 +135,12 @@ function createNewSearchPaginationManager(query){
                 </div>
                 <div class='document-content-container'>
                     <div class='document-content'>
+                        <div class='date-zipf-container'>
+                            <p class='articleDate'>${articleDate ? articleDate : ''}</p>
+                            <div class='document-zipf' onclick="open_document_zipf('${pmid}')">
+                                <img src="/static/chart.svg" alt="chart icon">
+                            </div>
+                        </div> 
                         <h2 class='document-title'>${title}</h2>
                         <p>${abstract}</p>
                     </div>
@@ -150,7 +171,7 @@ function createNewSearchPaginationManager(query){
 
 
 
-function drawZipfChart(data, chart_id, title, color='#5470C6'){
+function drawZipfChart(data, chart_id, content_id = null, title, color='#5470C6'){
     // 基于准备好的 dom，初始化 echarts 实例
     const myChart = echarts.init(document.getElementById(chart_id));
     const {words, frequencies} = data
@@ -199,6 +220,24 @@ function drawZipfChart(data, chart_id, title, color='#5470C6'){
     window.addEventListener('resize', function() {
         myChart.resize();
     });
+
+
+    // 當targetElement的style(style.display)發生變化時，也會重新resize myChart
+    if (content_id !== null){
+        // 要監聽的元素
+        const targetElement = document.getElementById(content_id);
+        // 建立 MutationObserver
+        const observer = new MutationObserver((mutationsList) => {
+            mutationsList.forEach((mutation) => {
+                if (mutation.attributeName === 'style') {
+                    myChart.resize();
+                }
+            });
+        });
+
+        // 設置 observer 來監聽屬性變化
+        observer.observe(targetElement, { attributes: true, attributeFilter: ['style'] });
+    }
 }
 
 function open_document_zipf(pmid){
@@ -212,8 +251,8 @@ function open_document_zipf(pmid){
         return response.json();  // 將回傳的資料轉為 JSON 格式
       })
       .then(data => {
-        drawZipfChart(data['nonStemZipf'], "nonStemZipfChart", "Zipf 分布圖")
-        drawZipfChart(data['pStemZipf'], "pStemZipfChart", "Zipf 分布圖(By Porter Stem)","#FF0000")
+        drawZipfChart(data['nonStemZipf'], "nonStemZipfChart", "documet-zipf-modal", "Zipf 分布圖")
+        drawZipfChart(data['pStemZipf'], "pStemZipfChart", "documet-zipf-modal", "Zipf 分布圖(By Porter Stem)","#FF0000")
       })
       .catch(error => {
         console.error('There was a problem with the fetch operation:', error);
@@ -226,63 +265,11 @@ function close_document_zipf(){
     modal.style.display = 'none';
 }
 
-function render_search_result(data) {
-    const {query, query_keywords, items} = data
-    const documents_results = document.getElementById("search-result-contents");
-    documents_results.innerHTML = '';
-    const search_content = document.getElementById("search-content")
-    search_content.innerHTML = '';
-    search_content.insertAdjacentHTML(
-        'beforeend',
-        `
-            <div>搜尋內容: ${query}</div>
-            <div>關鍵字: ${query_keywords.join(", ")}</div>
-            <div>關鍵字字數: ${query_keywords.length}</div>
-        `
-    )
-    if(items.length === 0){
-        documents_results.innerHTML = "<p>搜尋不到任何結果！<p>";
-        toggleAllElements();
-    } 
-    else {
-        let i = 1
-        items.forEach(item => {
-            const {pmid, title, abstract, dateCompleted, match_count} = item
-            documents_results.insertAdjacentHTML(
-                'beforeend',
-                `
-                <div class='document-wrapper'>
-                    <div class='document-ranking'>
-                        <div class='rank'> 
-                            ${i}
-                        </div>
-                        <div class='filename'>
-                            ${pmid}
-                        </div>
-                        <div class='match-count'>
-                            匹配數: ${match_count}
-                        </div>
-                    </div>
-                    <div class='document-content-container'>
-                        <div class='document-content'>
-                            <h2 class='document-title'>${title}</h2>
-                            <p>${abstract}</p>
-                        </div>
-                    </div>
-                </div>
-                `
-            );
-            i++;
-        })
-        toggleAllElements();
-    }
-}
-
 function drawKeywordZipf(event, keyword_id){
     const query = event.target.value
 
     // 使用 fetch 查詢 API
-    fetch(`/api/search/zipf?query=${query}&usePorterStem=true`)  // 替換成你自己的 API URL
+    fetch(`/api/search/zipf?query=${query}&usePorterStem=${usePorterStem}`)  // 替換成你自己的 API URL
       .then(response => {
         if (!response.ok) {
           throw new Error('Network response was not ok');
@@ -290,7 +277,12 @@ function drawKeywordZipf(event, keyword_id){
         return response.json();  // 將回傳的資料轉為 JSON 格式
       })
       .then(data => {
-        drawZipfChart(data, `keyword-${keyword_id}-ZipfChart`, `${query} Zipf分布圖`)
+        drawZipfChart(
+            data, 
+            `keyword-${keyword_id}-ZipfChart`, 
+            tabcontent_id='tab-zipf-compare',
+            `${query} Zipf分布圖`,
+        )
       })
       .catch(error => {
         console.error('There was a problem with the fetch operation:', error);

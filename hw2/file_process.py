@@ -25,33 +25,20 @@ async def analysis(file: UploadFile | str):
     pmid = root.find(".//PMID")
     title = root.find(".//ArticleTitle")
     abstract = root.find(".//AbstractText")
-    dateCompletedEle = root.find(".//DateCompleted")
-    dateRevisedEle = root.find(".//DateRevised")
+    articleDateElement = root.find(".//ArticleDate")
 
     if (pmid != None) and (title!=None) and (abstract!=None) :
-        dateCompleted = None
-        if(dateCompletedEle):
-            dateCompletedYearEle = dateCompletedEle.find(".//Year")
-            dateCompletedMonthEle = dateCompletedEle.find(".//Month")
-            dateCompletedDayEle = dateCompletedEle.find(".//Day")
-            if(dateCompletedYearEle and dateCompletedMonthEle and dateCompletedDayEle):
-                if(dateCompletedYearEle.text and dateCompletedMonthEle.text and dateCompletedDayEle.text):
-                    dateCompletedDate = dateCompletedYearEle.text + dateCompletedMonthEle.text + dateCompletedDayEle.text
-                    dateCompleted = datetime.strptime(dateCompletedDate,"%Y%m%d")
+        articleDate = None
+        if(articleDateElement!=None):
+            articleDateYearEle = articleDateElement.find(".//Year")
+            articleDateMonthEle = articleDateElement.find(".//Month")
+            articleDateDayEle = articleDateElement.find(".//Day")
+            if(articleDateYearEle!=None and articleDateMonthEle!=None and articleDateDayEle!=None):
+                if(articleDateYearEle.text and articleDateMonthEle.text and articleDateDayEle.text):
+                    articleDateDate = articleDateYearEle.text + articleDateMonthEle.text + articleDateDayEle.text
+                    articleDate = datetime.strptime(articleDateDate,"%Y%m%d")
         
-        dateRevised = None
-        if(dateRevisedEle):
-            dateRevisedYearEle = dateRevisedEle.find(".//Year")
-            dateRevisedMonthEle = dateRevisedEle.find(".//Month")
-            dateRevisedDayEle = dateRevisedEle.find(".//Day")
-            if(dateRevisedYearEle and dateRevisedMonthEle and dateRevisedDayEle):
-                if(dateRevisedYearEle.text and dateRevisedMonthEle.text and dateRevisedDayEle.text):
-                    dateRevisedDate = dateRevisedYearEle.text + dateRevisedMonthEle.text + dateRevisedDayEle.text
-                    dateRevised = datetime.strptime(dateRevisedDate,"%Y%m%d")
-        
-        
-        
-        
+
         title_text = ''.join(title.itertext())
         abstract_text = ''.join(abstract.itertext())
         nonStemInvIdx = {"title":{}, "abstract":{}} 
@@ -74,8 +61,7 @@ async def analysis(file: UploadFile | str):
 
         doc = {
             "pmid": pmid.text,
-            "dateCompleted": dateCompleted,
-            "dateRevised": dateRevised,
+            "articleDate": articleDate,
             "title": title_text,
             "abstract": abstract_text,
             "pStemInvIdx": pStemInvIdx,

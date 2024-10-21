@@ -15,7 +15,7 @@ class PaginationManager {
                 nextButton: '#nextButton',
                 pageInput: '#pageInput',
                 totalPages: '#totalPages',
-                errorMessage: '#errorMessage'
+                resultMesssage: '#resultMesssage'
             },
 
             // 數據相關函數
@@ -113,7 +113,7 @@ class PaginationManager {
             nextButton: getElement(elements.nextButton),
             pageInput: getElement(elements.pageInput),
             totalPages: getElement(elements.totalPages),
-            errorMessage: getElement(elements.errorMessage),
+            resultMesssage: getElement(elements.resultMesssage),
         };
 
         // 驗證必要元素是否存在
@@ -211,7 +211,7 @@ class PaginationManager {
             }
 
             this.responseData = result;
-            this.renderData(result.items);
+            this.renderData(result.items, result.total);
             this.updateUI();
 
             // 調用數據加載完成回調
@@ -246,7 +246,7 @@ class PaginationManager {
             }
 
             this.responseData = result;
-            this.renderData(result.items);
+            this.renderData(result.items, result.total);
             this.updateUI();
 
             // 調用數據加載完成回調
@@ -268,20 +268,24 @@ class PaginationManager {
     }
 
     showLoading() {
-        this.elements.errorMessage.innerHTML = '';
-        this.elements.errorMessage.appendChild(this.options.renderLoading());
+        this.elements.resultMesssage.innerHTML = '';
+        this.elements.resultMesssage.appendChild(this.options.renderLoading());
     }
 
     showError(message) {
-        this.elements.errorMessage.innerHTML = '';
-        this.elements.errorMessage.appendChild(this.options.renderError(message));
+        this.elements.resultMesssage.innerHTML = '';
+        this.elements.resultMesssage.appendChild(this.options.renderError(message));
+    }
+
+    showTotalResult(total){
+        this.elements.resultMesssage.innerHTML = `${total}個結果`;
     }
 
     clearError(){
-        this.elements.errorMessage.innerHTML = '';
+        this.elements.resultMesssage.innerHTML = '';
     }
 
-    renderData(items) {
+    renderData(items,total=null) {
         this.clearError();
         this.elements.list.innerHTML = '';
         // this.elements.container.innerHTML = '';
@@ -289,6 +293,9 @@ class PaginationManager {
 
         if (items.length === 0) {
             this.showError(this.options.noDataErrorMessage);
+        }
+        if(total){
+            this.showTotalResult(total);
         }
         items.forEach(item => {
             this.elements.list.appendChild(this.options.renderItem(item));
