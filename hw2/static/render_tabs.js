@@ -159,13 +159,13 @@ function createNewSearchPaginationManager(query){
         fetchData: async (page) => {
             let url = ''
             if(startDate && endDate) {
-                url = `/api/search?startDate=${startDate}&endDate=${endDate}&query=${query}&usePorterStem=${usePorterStem}&page=${page}&pageSize=12`
+                url = `/api/search?startDate=${startDate}&endDate=${endDate}&query=${query}&usePorterStem=${usePorterStem}&page=${page}&pageSize=12&operator=${operator}`
             } else if (startDate) {
-                url = `/api/search?startDate=${startDate}&query=${query}&usePorterStem=${usePorterStem}&page=${page}&pageSize=12`
+                url = `/api/search?startDate=${startDate}&query=${query}&usePorterStem=${usePorterStem}&page=${page}&pageSize=12&operator=${operator}`
             } else if (endDate) {
-                url = `/api/search?endDate=${endDate}&query=${query}&usePorterStem=${usePorterStem}&page=${page}&pageSize=12`
+                url = `/api/search?endDate=${endDate}&query=${query}&usePorterStem=${usePorterStem}&page=${page}&pageSize=12&operator=${operator}`
             } else {
-                url = `/api/search?query=${query}&usePorterStem=${usePorterStem}&page=${page}&pageSize=12`
+                url = `/api/search?query=${query}&usePorterStem=${usePorterStem}&page=${page}&pageSize=12&operator=${operator}`
             }    
             const response = await fetch(url);
             const data = await response.json();
@@ -324,8 +324,19 @@ function close_document_zipf(){
 function drawKeywordZipf(event, keyword_id){
     const query = event.target.value
 
+    let url = ''
+    if(startDate && endDate) {
+        url = `/api/search/zipf?startDate=${startDate}&endDate=${endDate}&query=${query}&usePorterStem=${usePorterStem}&operator=${operator}`
+    } else if (startDate) {
+        url = `/api/search/zipf?startDate=${startDate}&query=${query}&usePorterStem=${usePorterStem}&operator=${operator}`
+    } else if (endDate) {
+        url = `/api/search/zipf?endDate=${endDate}&query=${query}&usePorterStem=${usePorterStem}&operator=${operator}`
+    } else {
+        url = `/api/search/zipf?query=${query}&usePorterStem=${usePorterStem}&operator=${operator}`
+    }    
+
     // 使用 fetch 查詢 API
-    fetch(`/api/search/zipf?query=${query}&usePorterStem=${usePorterStem}`)  // 替換成你自己的 API URL
+    fetch(url)
       .then(response => {
         if (!response.ok) {
           throw new Error('Network response was not ok');

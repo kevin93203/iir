@@ -85,7 +85,7 @@ class PaginationManager {
         this.fetchData(this.currentPage);
     }
 
-    restore(reFetch=flase){
+    restore(reFetch=false){
         // 初始化 DOM 元素
         this.initializeElements();
 

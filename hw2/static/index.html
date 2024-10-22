@@ -43,6 +43,12 @@
                 <input type="date" id="startDate" onchange="changeStartDate(event)">
                 <input type="date" id="endDate" onchange="changeEndDate(event)">
             </div>
+            <div class="option">
+                <select id="operator" class="custom-select">
+                    <option value="or" selected>OR</option>
+                    <option value="and">AND</option>
+                </select>
+            </div>
         </div>
         <button class="search-btn" onclick="search()">IIR Search</button>
     </div>
@@ -156,6 +162,21 @@
             delete_confirm_modal.style.display = "none";
         }
         }
+
+        let operator = 'or'
+        // 監聽選單變更事件
+        const operatorSelect = document.getElementById("operator");
+
+        operatorSelect.addEventListener("change", function() {
+            const selectedValue = operatorSelect.value;
+            operator = selectedValue;
+            console.log("你選擇了: " + selectedValue);
+            // 動態更新 selected 屬性
+            Array.from(operatorSelect.options).forEach(option => {
+                option.removeAttribute("selected");
+            });
+            operatorSelect.options[operatorSelect.selectedIndex].setAttribute("selected", "selected");
+        });
     </script>
 
     <script src="static/script.js" defer></script>

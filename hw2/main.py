@@ -4,10 +4,10 @@ from fastapi.staticfiles import StaticFiles
 from typing import List, Literal
 import os
 import pymongo
-import xml.etree.ElementTree as ET
 from datetime import datetime, date
 from math import ceil
 from pydantic import BaseModel
+from enum import Enum
 
 import file_process
 import common.db_connection as db_connection
@@ -81,6 +81,10 @@ from nltk.corpus import stopwords
 import re
 import string
 
+class QueryOperator(str, Enum):
+    OR = "or"
+    AND = "and"
+
 def custom_tokenize(text):
     return re.findall(r'\b\w+\b|[^\w\s]',text)
 
@@ -101,15 +105,19 @@ def get_query_keywords(query:str, stemmer:PorterStemmer | None = None):
 
 def getQueryFilter(
     query_keywords: list[str], 
-    invIdxKey: Literal['pStemInvIdx','nonStemInvIdx']
+    invIdxKey: Literal['pStemInvIdx','nonStemInvIdx'],
+    operator: QueryOperator = QueryOperator.OR,
 ):
-    or_list = []
+    and_or_or_list = []
+    word_or_list = []
     for word in query_keywords:
-        or_list.append({ "pmid": word })
-        or_list.append({ f"{invIdxKey}.title.{word}": { "$exists": True } })
-        or_list.append({ f"{invIdxKey}.abstract.{word}": { "$exists": True } })
+        word_or_list = []
+        word_or_list.append({ "pmid": word })
+        word_or_list.append({ f"{invIdxKey}.title.{word}": { "$exists": True } })
+        word_or_list.append({ f"{invIdxKey}.abstract.{word}": { "$exists": True } })
+        and_or_or_list.append({"$or": word_or_list})
     
-    return {"$or": or_list}
+    return {f"${operator}": and_or_or_list}
 
 def getAllWordFreqField(
     query_keywords: list[str], 
@@ -198,13 +206,27 @@ def articleDateToString(docs:list[dict]):
             doc['articleDate'] = doc['articleDate'].strftime("%Y-%m-%d")
     return docs
 
-def search_documents(query:str, usePorterStem:bool, full_abstract_InvIdx:bool = False):
+def search_documents(
+    query:str, 
+    usePorterStem:bool, 
+    startDatetime: datetime | None,
+    endDatetime: datetime | None,
+    operator: QueryOperator,
+    full_abstract_InvIdx:bool = False
+):
     stemmer = PorterStemmer() if usePorterStem else None
     query_keywords = get_query_keywords(query, stemmer)
     
     invIdxKey = "pStemInvIdx" if stemmer else "nonStemInvIdx"
-    query_filter = getQueryFilter(query_keywords, invIdxKey)
+    query_filter = getQueryFilter(query_keywords, invIdxKey, operator)
+    date_filter = getDateFilter(startDatetime, endDatetime)
+
+    if(date_filter):
+        query_filter = {
+            "$and": [date_filter, query_filter]
+        }
     print(query_filter)
+
     projection = getProjection(query_keywords, invIdxKey, full_abstract_InvIdx)
     result = db_connection.collection.find(
         query_filter,
@@ -217,11 +239,11 @@ def search_documents(query:str, usePorterStem:bool, full_abstract_InvIdx:bool = 
 def getDateFilter(startDatetime: datetime | None, endDatetime: datetime | None):
     date_filter = {}
     if startDatetime and endDatetime:
-        date_filter = {"$match": {'articleDate': {'$gte': startDatetime, '$lte': endDatetime}}}
+        date_filter = {'articleDate': {'$gte': startDatetime, '$lte': endDatetime}}
     elif startDatetime:
-        date_filter = {"$match": {'articleDate': {'$gte': startDatetime}}}
+        date_filter = {'articleDate': {'$gte': startDatetime}}
     elif endDatetime:
-        date_filter = {"$match": {'articleDate': {'$lte': endDatetime}}}
+        date_filter = {'articleDate': {'$lte': endDatetime}}
     
     return date_filter
 
@@ -230,6 +252,7 @@ def search_documents_page(
     usePorterStem:bool, 
     startDatetime: datetime | None,
     endDatetime: datetime | None,
+    operator: QueryOperator,
     page: int,
     pageSize: int,
     full_abstract_InvIdx:bool = False
@@ -238,7 +261,8 @@ def search_documents_page(
     query_keywords = get_query_keywords(query, stemmer)
     
     invIdxKey = "pStemInvIdx" if stemmer else "nonStemInvIdx"
-    query_filter = getQueryFilter(query_keywords, invIdxKey)
+    query_filter = getQueryFilter(query_keywords, invIdxKey, operator)
+
     all_word_freq_field = getAllWordFreqField(query_keywords, invIdxKey)
     
     
@@ -251,7 +275,7 @@ def search_documents_page(
     #計算總數pipline
     count_pipeline = []
     if(date_filter):
-        count_pipeline.append(date_filter)
+        count_pipeline.append({"$match": date_filter})
     count_pipeline.extend([{"$match": query_filter},{"$count": "total"}])
 
     # 獲取總數
@@ -264,7 +288,7 @@ def search_documents_page(
     #搜尋pipeline
     pipeline = []
     if(date_filter):
-        pipeline.append(date_filter)
+        pipeline.append({"$match": date_filter})
     pipeline.extend([
         {"$match": query_filter},
         {
@@ -299,13 +323,14 @@ async def search_documents_content(
     usePorterStem:bool=True,
     startDate: date | None = None,
     endDate: date | None = None,
+    operator: QueryOperator = QueryOperator.OR,
     page: int = Query(1, ge=1, description="當前頁碼"),
     pageSize: int = Query(12, ge=1, le=100, description="每頁數量"),
 ):
     startDatetime = datetime.combine(startDate, datetime.min.time()) if startDate else None
     endDatetime = datetime.combine(endDate, datetime.min.time()) if endDate else None
     docs, query_keywords, stemmer, totalDocs, totalPages = \
-        search_documents_page(query, usePorterStem, startDatetime, endDatetime, page, pageSize)
+        search_documents_page(query, usePorterStem, startDatetime, endDatetime, operator, page, pageSize)
     docs = highlight_query_in_documents(query_keywords, docs, stemmer)
     # 將articleDate轉為"yyyy-mm-dd""
     docs = articleDateToString(docs)
@@ -408,9 +433,17 @@ async def document_zipf(pmid:str):
     }
 
 @app.get("/api/search/zipf")
-async def search_zipf(query:str, usePorterStem:bool=True):
+async def search_zipf(
+    query:str, 
+    usePorterStem:bool=True,
+    startDate: date | None = None,
+    endDate: date | None = None,
+    operator: QueryOperator = QueryOperator.OR,
+):
     if not query: return
-    docs, _, _ = search_documents(query, usePorterStem, True)
+    startDatetime = datetime.combine(startDate, datetime.min.time()) if startDate else None
+    endDatetime = datetime.combine(endDate, datetime.min.time()) if endDate else None
+    docs, _, _ = search_documents(query, usePorterStem, startDatetime, endDatetime, operator,True)
     invIdxKey = "pStemInvIdx" if usePorterStem else "nonStemInvIdx"
     
     words_frequencies ={}
