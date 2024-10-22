@@ -1,4 +1,3 @@
-let global_data = null; // 保留全域變數
 
 function triggerFileInput() {
     document.getElementById('file-input').click();  // 觸發檔案上傳
@@ -23,10 +22,11 @@ async function handleFileUpload(event) {
 
         if (response.ok) {
             const jsonData = await response.json(); // 取得 JSON 資料
-            global_data = jsonData;
-            render_documents(global_data); // 使用 render_documents 顯示未加亮的文檔
-            clean_history_and_search_result() // 清空搜尋歷史和搜尋結果的html
-            toggleAllElements()
+            console.log(jsonData)
+            dataSetPaginationManager.elements.pageInput.value = 1;
+            // 手動觸發 change 事件
+            let event = new Event('change');
+            dataSetPaginationManager.elements.pageInput.dispatchEvent(event);
             alert('Files uploaded successfully!');
         } else {
             const errorData = await response.json(); // 取得錯誤的 JSON 資料（如果有的話）

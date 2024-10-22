@@ -1,18 +1,16 @@
 from fastapi import FastAPI, UploadFile, File, Query
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from typing import List, Literal, Optional
+from typing import List, Literal
 import os
-import json
+import pymongo
 import xml.etree.ElementTree as ET
 from datetime import datetime, date
 from math import ceil
 from pydantic import BaseModel
 
-import se
 import file_process
-import model
-import common.db_connetion as db_connetion
+import common.db_connection as db_connection
 
 app = FastAPI()
 
@@ -29,59 +27,43 @@ async def read_html():
 # 接收上傳的檔案 (支援多檔案上傳)
 @app.post("/api/upload/")
 async def upload_files(files: List[UploadFile] = File(...)):
-    uploaded_file_names = []
-    documents = []
-    titles = []
-
+    docs = []
     # 處理檔案，限制檔案類型為 json 或 xml
     for file in files:
-        file_content = await file.read()  # 讀取檔案內容
-        if file.content_type == "application/json":
-            # 解析 JSON 檔案
-            try:
-                json_data:dict = json.loads(file_content)
-                text = json_data.get("text")
-                if(text):
-                    documents.append(text)
-            except json.JSONDecodeError:
-                return {"error": f"Failed to parse JSON file: {file.filename}"}
-        
-        elif file.content_type == "text/xml":
+        file_content = await file.read()  # 讀取檔案內容        
+        if file.content_type == "text/xml":
             # 解析 XML 檔案
             try:
-                # 讀取 XML 檔案
-                root = ET.fromstring(file_content)
-                # 使用 XPath 查找所有 AbstractText 標籤
-                abstract_texts = root.find(".//AbstractText")
-                if abstract_texts!=None:
-                    documents.append(abstract_texts.text)
-
-                article_title = root.find(".//ArticleTitle")
-                if article_title!=None:
-                    titles.append(article_title.text)
-            except ET.ParseError:
+                doc = await file_process.analysis(file_content)
+                docs.append(doc)
+            except Exception:
                 return {"error": f"Failed to parse XML file: {file.filename}"}
         else:
             return {"error": f"Unsupported file type: {file.filename}"}
+        
+    batch_ops = []    
+    for doc in docs:
+        if(doc == None): continue
+        # 生成 upsert 操作（如果匹配则更新，不匹配则插入）
+        operation = pymongo.UpdateOne(
+            {'pmid': doc['pmid']},  # 假设文档的 `_id` 字段为唯一键
+            {'$set': doc},        # 如果匹配到已有的文档，则更新整个文档
+            upsert=True           # 如果没有匹配到，则插入文档
+        )
+        batch_ops.append(operation)
 
-        uploaded_file_names.append(file.filename)
-    
-    #對每個文件倒排索引
-    inverted_index = se.build_inverted_indexes(documents)
-    inverted_index_titles = se.build_inverted_indexes(titles)
-    #統計每個文件的統計量
-    stats = se.documents_statistics(documents)
-    
-    #回傳所有檔案名稱、文件內容、倒排索引, 統計量， 空的搜尋紀錄
-    return {
-        "filenames": uploaded_file_names, 
-        "documents": documents,
-        "titles": titles, 
-        "inverted_index": inverted_index,
-        "inverted_index_titles":  inverted_index_titles,
-        "statistics":stats,
-        "search_history":[],
-    }
+    if batch_ops:
+        result = db_connection.collection.bulk_write(batch_ops)
+        return {
+            "inserted_count": result.inserted_count, 
+            "modified_count": result.modified_count,
+            "upserted_count": result.upserted_count
+        }
+
+    else:
+        return {"inserted_count": 0, "modified_count": 0,"upserted_count": 0}
+
+        
 
 # 接收上傳的檔案 (支援多檔案上傳)
 @app.post("/api/upload2/")
@@ -224,7 +206,7 @@ def search_documents(query:str, usePorterStem:bool, full_abstract_InvIdx:bool = 
     query_filter = getQueryFilter(query_keywords, invIdxKey)
     print(query_filter)
     projection = getProjection(query_keywords, invIdxKey, full_abstract_InvIdx)
-    result = db_connetion.collection.find(
+    result = db_connection.collection.find(
         query_filter,
         projection
     )
@@ -273,7 +255,7 @@ def search_documents_page(
     count_pipeline.extend([{"$match": query_filter},{"$count": "total"}])
 
     # 獲取總數
-    count_result = list(db_connetion.collection.aggregate(count_pipeline))
+    count_result = list(db_connection.collection.aggregate(count_pipeline))
     totalDocs:int = count_result[0]["total"] if count_result else 0
     
     # 計算總頁數
@@ -298,7 +280,7 @@ def search_documents_page(
         {"$project": projection}
     ])
     
-    docs = list(db_connetion.collection.aggregate(pipeline))
+    docs = list(db_connection.collection.aggregate(pipeline))
 
     return docs, query_keywords, stemmer, totalDocs, totalPages
 
@@ -338,6 +320,11 @@ async def search_documents_content(
         query_keywords=query_keywords
     )
 
+@app.delete("/api/delete")
+async def delete_document(pmid:str):
+    reseult = db_connection.collection.delete_one({"pmid": pmid})
+    return {"deleted_count": reseult.deleted_count}
+
 def invIdxToWordsAndFrequencies(invIdx:dict[str,dict]):
     words = list(invIdx.keys())
     words = sorted(words, key= lambda x: invIdx[x]['freq'],reverse=True)
@@ -364,7 +351,7 @@ async def document_set(
     }
 
     # 計算總數量
-    totalDocs = db_connetion.collection.count_documents(query_filter)
+    totalDocs = db_connection.collection.count_documents(query_filter)
     
     # 計算總頁數
     totalPages = ceil(totalDocs / pageSize)
@@ -373,8 +360,9 @@ async def document_set(
     skip = (page - 1) * pageSize
     
     # 查詢數據
-    docs = list(db_connetion.collection
+    docs = list(db_connection.collection
         .find(query_filter,projection)
+        .sort('updated_at', pymongo.DESCENDING)
         .skip(skip)
         .limit(pageSize))
 
@@ -401,7 +389,7 @@ async def document_set(
 
 @app.get("/api/document/zipf")
 async def document_zipf(pmid:str):
-    doc:dict | None = db_connetion.collection.find_one(
+    doc:dict | None = db_connection.collection.find_one(
         {"pmid":pmid},
         {
             "pStemInvIdx.abstract":1,

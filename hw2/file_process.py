@@ -10,12 +10,14 @@ def list_xml_files(directory):
     return [file for file in os.listdir(directory) if file.endswith('.xml')]
 
 # 提取PMID、title、Abstract, 建立inverted index, 計算統計值
-async def analysis(file: UploadFile | str):
+async def analysis(file: UploadFile | str | bytes):
     root = None
     if(isinstance(file, UploadFile)):
         file_content = await file.read()  # 讀取檔案內容
         # 讀取 XML 檔案
         root = ET.fromstring(file_content)
+    elif(isinstance(file, bytes)):
+        root = ET.fromstring(file)
     else:
         tree = ET.parse(file)
         # 獲取根節點
@@ -81,7 +83,7 @@ async def analysis(file: UploadFile | str):
 
     
 if __name__ == "__main__":
-    import common.db_connetion as db_connection
+    import hw2.common.db_connection as db_connection
     import pymongo
 
 

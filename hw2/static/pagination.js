@@ -85,15 +85,20 @@ class PaginationManager {
         this.fetchData(this.currentPage);
     }
 
-    restore(){
+    restore(reFetch=flase){
         // 初始化 DOM 元素
         this.initializeElements();
 
         // 綁定事件
         this.bindEvents();
 
-        // 復原並重新render資料
-        this.restoreData()
+        if(reFetch){
+            // 初始加載數據
+            this.fetchData(this.currentPage);
+        } else {
+            // 復原並重新render資料
+            this.restoreData()
+        }
     }
 
     initializeElements() {

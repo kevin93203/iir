@@ -20,6 +20,40 @@ function createElementFromHTML(htmlString) {
     return doc.body.firstChild; // 返回解析後的第一個子元素
 }
 
+function close_delete_confirm(){
+    const modal = document.querySelector('#delete-confirm-modal');
+    modal.style.display = 'none';
+}
+
+function openDetelConfirmModal(pmid){
+    const modal = document.getElementById("delete-confirm-modal")
+    const modal_content = document.getElementById("delete-modal-content")
+    modal_content.innerHTML = ""
+    modal_content.insertAdjacentHTML(
+        'beforeend',
+        `
+        <span class="close" onclick="close_delete_confirm()">&times;</span>
+        <p id="delete-confirm-text">你確定要刪除PMID為<span style="color:#4285F4;font-weight: 500;">${pmid}</span>的文件嗎?</p>
+        <div class="delete-confirm-btn-container">
+            <button class="confirm-btn" onclick="deleteDocument(${pmid})">確定</button>
+            <button class="cancel-btn" onclick="close_delete_confirm()">取消</button>
+        </div>
+        `
+    )
+    modal.style.display = "flex";
+}
+
+async function deleteDocument(pmid) {
+    const response = await fetch(
+        `/api/delete?pmid=${pmid}`,
+        {method: 'DELETE'}
+    );
+    const data = await response.json();
+    console.log(data)
+    dataSetPaginationManager.restore(true);
+    close_delete_confirm()
+}
+
 // 資料集分頁manager
 const dataSetPaginationManager = new PaginationManager({
     initialPage: 1,
@@ -62,6 +96,9 @@ const dataSetPaginationManager = new PaginationManager({
                 <div class='document-header'>
                     <div class='pmid'>
                         PMID: ${pmid}
+                    </div>
+                    <div class='delete' onclick='openDetelConfirmModal(${pmid})'>
+                        <img src="/static/delete.svg" alt="delete icon">
                     </div>
                 </div>
                 <div class='document-content-container'> 
