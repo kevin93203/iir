@@ -16,35 +16,40 @@
 
 <body>
 
-    <!-- <h1>IIR Search</h1> -->
-    <img src="/static/file.png" style="width: 300px;">
+    <div class="search-bar-wrapper">
+        <img src="/static/file.png" style="width: 300px;">
+        <div class="search-container" id="search-bar">
+            <input type="search" id="search" name="q" placeholder="Search..." />
+            <!-- Icon for uploading an image -->
+            <div class="search-icon" onclick="triggerFileInput()">
+                <img src="/static/paper-clip.svg" alt="Upload icon">
+            </div>
 
-    <div class="search-container" id="search-bar">
-        <input type="search" id="search" name="q" placeholder="Search..." />
-        <!-- Icon for uploading an image -->
-        <div class="search-icon" onclick="triggerFileInput()">
-            <img src="/static/paper-clip.svg" alt="Upload icon">
+            <!-- 顯示的檔案上傳欄位，允許多個檔案 -->
+            <div class="file-upload">
+                <input type="file" id="file-input" accept=".json,.xml" multiple onchange="handleFileUpload(event)">
+            </div>
         </div>
-
-        <!-- 顯示的檔案上傳欄位，允許多個檔案 -->
-        <div class="file-upload">
-            <input type="file" id="file-input" accept=".json,.xml" multiple onchange="handleFileUpload(event)">
+        <div class="search-options">
+            <div class="option">
+                詞幹提取
+                <label class="switch">
+                    <input id="useStem" type="checkbox" checked onchange="changeUseStem(event)">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+            <div class="option">
+                <label for="birthday">時間範圍</label>
+                <input type="date" id="startDate" onchange="changeStartDate(event)">
+                <input type="date" id="endDate" onchange="changeEndDate(event)">
+            </div>
         </div>
+        <button class="search-btn" onclick="search()">IIR Search</button>
     </div>
 
-    <div class="search-options">
-        <div class="option">
-            詞幹提取
-            <label class="switch">
-                <input id="useStem" type="checkbox" checked onchange="changeUseStem(event)">
-                <span class="slider round"></span>
-            </label>
-        </div>
-    </div>
     
     
-    <button class="search-btn" onclick="search()">IIR Search</button>
-
+   
     <!-- Tab links -->
     <div class="tab">
         <button id="tab-search-result-btn" class="tablinks" onclick="openTab(event, 'tab-search-result')">搜尋結果</button>

@@ -5,7 +5,7 @@ from typing import List, Literal, Optional
 import os
 import json
 import xml.etree.ElementTree as ET
-from datetime import datetime
+from datetime import datetime, date
 from math import ceil
 from pydantic import BaseModel
 
@@ -231,9 +231,23 @@ def search_documents(query:str, usePorterStem:bool, full_abstract_InvIdx:bool = 
     docs = list(result)
     return docs, query_keywords, stemmer
 
+# 動態生成日期篩選條件
+def getDateFilter(startDatetime: datetime | None, endDatetime: datetime | None):
+    date_filter = {}
+    if startDatetime and endDatetime:
+        date_filter = {"$match": {'articleDate': {'$gte': startDatetime, '$lte': endDatetime}}}
+    elif startDatetime:
+        date_filter = {"$match": {'articleDate': {'$gte': startDatetime}}}
+    elif endDatetime:
+        date_filter = {"$match": {'articleDate': {'$lte': endDatetime}}}
+    
+    return date_filter
+
 def search_documents_page(
     query:str, 
     usePorterStem:bool, 
+    startDatetime: datetime | None,
+    endDatetime: datetime | None,
     page: int,
     pageSize: int,
     full_abstract_InvIdx:bool = False
@@ -244,19 +258,32 @@ def search_documents_page(
     invIdxKey = "pStemInvIdx" if stemmer else "nonStemInvIdx"
     query_filter = getQueryFilter(query_keywords, invIdxKey)
     all_word_freq_field = getAllWordFreqField(query_keywords, invIdxKey)
-    print("all_word_freq_field: ", all_word_freq_field)
+    
+    
+
     projection = getProjection(query_keywords, invIdxKey, full_abstract_InvIdx)
     projection["match_count"] = 1
-    count_pipeline = [{"$match": query_filter},{"$count": "total"}]
+
+    date_filter = getDateFilter(startDatetime, endDatetime)
+
+    #計算總數pipline
+    count_pipeline = []
+    if(date_filter):
+        count_pipeline.append(date_filter)
+    count_pipeline.extend([{"$match": query_filter},{"$count": "total"}])
+
     # 獲取總數
     count_result = list(db_connetion.collection.aggregate(count_pipeline))
     totalDocs:int = count_result[0]["total"] if count_result else 0
-    print("totalDocs: ",totalDocs)
     
     # 計算總頁數
     totalPages = ceil(totalDocs / pageSize)
 
-    pipeline = [
+    #搜尋pipeline
+    pipeline = []
+    if(date_filter):
+        pipeline.append(date_filter)
+    pipeline.extend([
         {"$match": query_filter},
         {
             "$addFields": {
@@ -269,7 +296,7 @@ def search_documents_page(
         {"$skip": (page - 1) * pageSize},
         {"$limit": pageSize},
         {"$project": projection}
-    ]
+    ])
     
     docs = list(db_connetion.collection.aggregate(pipeline))
 
@@ -288,11 +315,15 @@ class PaginatedResponse(BaseModel):
 async def search_documents_content(
     query:str, 
     usePorterStem:bool=True,
+    startDate: date | None = None,
+    endDate: date | None = None,
     page: int = Query(1, ge=1, description="當前頁碼"),
     pageSize: int = Query(12, ge=1, le=100, description="每頁數量"),
 ):
+    startDatetime = datetime.combine(startDate, datetime.min.time()) if startDate else None
+    endDatetime = datetime.combine(endDate, datetime.min.time()) if endDate else None
     docs, query_keywords, stemmer, totalDocs, totalPages = \
-         search_documents_page(query, usePorterStem, page, pageSize)
+        search_documents_page(query, usePorterStem, startDatetime, endDatetime, page, pageSize)
     docs = highlight_query_in_documents(query_keywords, docs, stemmer)
     # 將articleDate轉為"yyyy-mm-dd""
     docs = articleDateToString(docs)

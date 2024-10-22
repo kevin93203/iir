@@ -1,7 +1,17 @@
 let usePorterStem = true
+let startDate = ''
+let endDate = ''
 
 function changeUseStem(evt) {
     usePorterStem = evt.target.checked;
+}
+
+function changeStartDate(evt){
+    startDate = evt.target.value;
+}
+
+function changeEndDate(evt){
+    endDate = evt.target.value;
 }
 
 function createElementFromHTML(htmlString) {
@@ -110,8 +120,17 @@ function createNewSearchPaginationManager(query){
         noDataErrorMessage: "搜尋不到任何結果！",
         // 自定義獲取數據的函數
         fetchData: async (page) => {
-            // 示例：從實際 API 獲取數據
-            const response = await fetch(`/api/search?query=${query}&usePorterStem=${usePorterStem}&page=${page}&pageSize=12`);
+            let url = ''
+            if(startDate && endDate) {
+                url = `/api/search?startDate=${startDate}&endDate=${endDate}&query=${query}&usePorterStem=${usePorterStem}&page=${page}&pageSize=12`
+            } else if (startDate) {
+                url = `/api/search?startDate=${startDate}&query=${query}&usePorterStem=${usePorterStem}&page=${page}&pageSize=12`
+            } else if (endDate) {
+                url = `/api/search?endDate=${endDate}&query=${query}&usePorterStem=${usePorterStem}&page=${page}&pageSize=12`
+            } else {
+                url = `/api/search?query=${query}&usePorterStem=${usePorterStem}&page=${page}&pageSize=12`
+            }    
+            const response = await fetch(url);
             const data = await response.json();
             return {
                 items: data.items,
