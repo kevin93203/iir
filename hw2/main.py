@@ -147,8 +147,8 @@ def getProjection(
         return projection
     
     for word in query_keywords:
-        projection[f"{invIdxKey}.title.{word}"] = 1
-        projection[f"{invIdxKey}.abstract.{word}"] = 1
+        projection[f"{invIdxKey}.title.{word}.freq"] = 1
+        projection[f"{invIdxKey}.abstract.{word}.freq"] = 1
     
     return projection
 

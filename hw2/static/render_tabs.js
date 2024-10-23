@@ -227,11 +227,13 @@ function createNewSearchPaginationManager(query){
 
 
 
-function drawZipfChart(data, chart_id, content_id = null, title, color='#5470C6'){
+function drawZipfChart(data, chart_id, content_id = null, title, color='#5470C6', log=false){
     // 基于准备好的 dom，初始化 echarts 实例
     const myChart = echarts.init(document.getElementById(chart_id));
-    const {words, frequencies} = data
-
+    let {words, frequencies} = data
+    if(log){
+        frequencies = frequencies.map(freq => Math.log10(freq))
+    }
     // 指定圖表的配置項和數據
     const option = {
         title: {
@@ -321,6 +323,9 @@ function close_document_zipf(){
     modal.style.display = 'none';
 }
 
+
+let tableManagers = [null, null]
+
 function drawKeywordZipf(event, keyword_id){
     const query = event.target.value
 
@@ -344,11 +349,23 @@ function drawKeywordZipf(event, keyword_id){
         return response.json();  // 將回傳的資料轉為 JSON 格式
       })
       .then(data => {
+        if(tableManagers[keyword_id-1]){
+            tableManagers[keyword_id-1].removeSelectChangeListener();
+        }
+        tableManagers[keyword_id-1] = new WordRankTableManager(data, keyword_id)
         drawZipfChart(
             data, 
             `keyword-${keyword_id}-ZipfChart`, 
             tabcontent_id='tab-zipf-compare',
             `${query} Zipf分布圖`,
+        )
+        drawZipfChart(
+            data, 
+            `keyword-${keyword_id}-ZipfChart-log`, 
+            tabcontent_id='tab-zipf-compare',
+            `${query} Zipf Log分布圖`,
+            '#FF0000',
+            true
         )
       })
       .catch(error => {

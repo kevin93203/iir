@@ -37,9 +37,7 @@ h1 {
 
 input[type="search"],
 input[type='text'] {
-    flex-grow: 1;
     width: 100%;
-    /* max-width: 500px; */
     padding: 12px 40px 12px 20px;
     /* 左側留空以容納 icon */
     border: 1px solid #dfe1e5;
@@ -49,6 +47,7 @@ input[type='text'] {
     outline: none;
     transition: box-shadow 0.2s ease-in-out;
     box-sizing: border-box;
+    height: 44px;
 }
 
 input[type="search"]:focus,
@@ -60,7 +59,6 @@ input[type='number']:focus {
 
 input[type="text"] {
     border-radius: 8px;
-    max-width: 600px;
 }
 
 input[type="date"] {
@@ -215,10 +213,11 @@ input[type="date"] {
     align-items: center;
     color: white;
     padding: 6px 10px;
-    height: 36px; /* 固定第一個元素高度 */
+    height: 36px;
+    /* 固定第一個元素高度 */
 }
 
-.document-wrapper:hover .delete{
+.document-wrapper:hover .delete {
     visibility: visible;
 }
 
@@ -312,6 +311,7 @@ ul li {
 }
 
 #popup-search {
+    z-index: 11;
     position: fixed;
     bottom: 40px;
     right: 0px;
@@ -358,7 +358,7 @@ ul li {
     color: #1DAC92;
 }
 
-#search-history-keywords .current{
+#search-history-keywords .current {
     color: #1DAC92;
 }
 
@@ -407,7 +407,7 @@ ul li {
     box-sizing: border-box;
 }
 
-.date-zipf-container{
+.date-zipf-container {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -512,11 +512,12 @@ ul li {
     gap: 10px;
 }
 
-.compare-row > div {
+.compare-row>div {
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
+    justify-content: flex-start;
+    /* 子元素會向上集中排列 */
+    align-items: stretch;
     padding: 20px;
     gap: 50px;
 }
@@ -656,17 +657,21 @@ ul li {
 }
 
 .no-spin {
-    -moz-appearance: textfield; /* Firefox */
+    -moz-appearance: textfield;
+    /* Firefox */
 }
 
 .no-spin::-webkit-inner-spin-button,
 .no-spin::-webkit-outer-spin-button {
-    -webkit-appearance: none; /* Chrome, Safari, Edge */
-    margin: 0; /* 移除 margin，避免影響外觀 */
+    -webkit-appearance: none;
+    /* Chrome, Safari, Edge */
+    margin: 0;
+    /* 移除 margin，避免影響外觀 */
 }
 
 #keyword-1,
-#keyword-2{
+#keyword-2 {
+    position: relative;
     transition: box-shadow 0.2s ease-in-out;
     border-radius: 8px;
 }
@@ -674,6 +679,16 @@ ul li {
 #keyword-1:hover,
 #keyword-2:hover {
     box-shadow: 0 0 12px #4285F4;
+}
+
+#keyword-1-input,
+#keyword-2-input {
+    background-color: white;
+    z-index: 10;
+    position: sticky;
+    top: 10px;
+    font-size: 20px;
+    font-weight: 500;
 }
 
 .search-options {
@@ -689,8 +704,10 @@ ul li {
     color: #686868;
     display: flex;
     flex-wrap: nowrap;
-    gap: 10px; /* 增加輸入框之間的間距 */
-    align-items: center; /* 垂直居中對齊 */
+    gap: 10px;
+    /* 增加輸入框之間的間距 */
+    align-items: center;
+    /* 垂直居中對齊 */
     text-wrap: nowrap;
 }
 
@@ -699,15 +716,15 @@ ul li {
     display: inline-block;
     width: 35px;
     height: 18px;
-  }
-  
-  .switch input { 
+}
+
+.switch input {
     opacity: 0;
     width: 0;
     height: 0;
-  }
-  
-  .slider {
+}
+
+.slider {
     position: absolute;
     cursor: pointer;
     top: 0;
@@ -717,9 +734,9 @@ ul li {
     background-color: #ccc;
     -webkit-transition: .4s;
     transition: .4s;
-  }
-  
-  .slider:before {
+}
+
+.slider:before {
     position: absolute;
     content: "";
     height: 14px;
@@ -729,30 +746,30 @@ ul li {
     background-color: white;
     -webkit-transition: .4s;
     transition: .4s;
-  }
-  
-  input:checked + .slider {
+}
+
+input:checked+.slider {
     background-color: #4285F4;
-  }
-  
-  input:focus + .slider {
+}
+
+input:focus+.slider {
     box-shadow: 0 0 1px #2196F3;
-  }
-  
-  input:checked + .slider:before {
+}
+
+input:checked+.slider:before {
     -webkit-transform: translateX(14px);
     -ms-transform: translateX(14px);
     transform: translateX(14px);
-  }
-  
-  /* Rounded sliders */
-  .slider.round {
+}
+
+/* Rounded sliders */
+.slider.round {
     border-radius: 34px;
-  }
-  
-  .slider.round:before {
+}
+
+.slider.round:before {
     border-radius: 50%;
-  }
+}
 
 .custom-select {
     outline: none;
@@ -766,6 +783,118 @@ ul li {
     padding-left: 5px;
     box-sizing: border-box;
     outline: none;
+}
+
+.words-rank-container {
+    display: none;
+    width: 100%;
+}
+
+.table-container {
+    width: 100%;
+    margin: 0;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+th {
+    background: linear-gradient(45deg, #4f46e5, #6366f1);
+    color: white;
+    padding: 1rem;
+    text-align: center;
+}
+
+td {
+    padding: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: center;
+    /* 所有表格內容置中 */
+}
+
+tr:hover {
+    background: #f8fafc;
+}
+
+tr:last-child td {
+    border-bottom: none;
+}
+
+.rank-1 {
+    background: linear-gradient(45deg, rgba(255, 215, 0, 0.1), transparent);
+}
+
+.rank-2 {
+    background: linear-gradient(45deg, rgba(192, 192, 192, 0.1), transparent);
+}
+
+.rank-3 {
+    background: linear-gradient(45deg, rgba(205, 127, 50, 0.1), transparent);
+}
+
+.rank-icon {
+    font-size: 1.5rem;
+}
+
+.percentage {
+    color: #6366f1;
+    font-weight: 500;
+}
+
+
+.controls {
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.select-container {
+    position: relative;
+}
+
+.select-container select {
+    padding: 0.5rem 2rem 0.5rem 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background-color: white;
+    font-size: 0.875rem;
+    cursor: pointer;
+    appearance: none;
+    color: #4f46e5;
+    font-weight: 500;
+}
+
+select:hover {
+    border-color: #4f46e5;
+}
+
+select:focus {
+    outline: 2px solid #4f46e5;
+    outline-offset: 1px;
+}
+
+.select-container::after {
+    content: "▼";
+    font-size: 0.8rem;
+    color: #4f46e5;
+    position: absolute;
+    right: 0.8rem;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+.label {
+    font-weight: 500;
+    color: #4b5563;
 }
 
 @media (max-width: 1200px) {

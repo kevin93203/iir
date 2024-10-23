@@ -54,9 +54,9 @@
         <button class="search-btn" onclick="search()">IIR Search</button>
     </div>
 
-    
-    
-   
+
+
+
     <!-- Tab links -->
     <div class="tab">
         <button id="tab-search-result-btn" class="tablinks" onclick="openTab(event, 'tab-search-result')">搜尋結果</button>
@@ -114,10 +114,68 @@
                 <div id="keyword-1">
                     <input id="keyword-1-input" type="text" placeholder="關鍵字1" onblur="drawKeywordZipf(event, 1)" />
                     <div id="keyword-1-ZipfChart" style="width: 100%;height:400px;"></div>
+                    <div id="keyword-1-ZipfChart-log" style="width: 100%;height:400px;"></div>
+                    <div id="keyword-1-WordsRank" class="words-rank-container">
+                        <div class="controls">
+                            <span class="label">顯示排名：</span>
+                            <div class="select-container">
+                                <select>
+                                    <option value="5">前 5 名</option>
+                                    <option value="10">前 10 名</option>
+                                    <option value="20">前 20 名</option>
+                                    <option value="30">前 30 名</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>排名</th>
+                                        <th>詞</th>
+                                        <th>頻率</th>
+                                        <th>百分比</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- 資料列將由 JavaScript 動態生成 -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
                 <div id="keyword-2">
                     <input id="keyword-2-input" type="text" placeholder="關鍵字2" onblur="drawKeywordZipf(event, 2)" />
                     <div id="keyword-2-ZipfChart" style="width: 100%;height:400px;"></div>
+                    <div id="keyword-2-ZipfChart-log" style="width: 100%;height:400px;"></div>
+                    <div id="keyword-2-WordsRank" class="words-rank-container">
+                        <div class="controls">
+                            <span class="label">顯示排名：</span>
+                            <div class="select-container">
+                                <select>
+                                    <option value="5">前 5 名</option>
+                                    <option value="10">前 10 名</option>
+                                    <option value="20">前 20 名</option>
+                                    <option value="30">前 30 名</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>排名</th>
+                                        <th>詞</th>
+                                        <th>頻率</th>
+                                        <th>百分比</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- 資料列將由 JavaScript 動態生成 -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -148,7 +206,7 @@
         const delete_confirm_modal = document.getElementById("delete-confirm-modal");
 
         // 當點擊 modal 外的區域時，關閉 modal
-        window.onclick = function(event) {
+        window.onclick = function (event) {
             if (event.target == modal) {
                 modal.style.display = "none";
             } else if (event.target == delete_confirm_modal) {
@@ -157,18 +215,18 @@
         }
 
         // 監聽鍵盤按下事件，當按下 ESC 時關閉 modal
-        window.onkeydown = function(event) {
-        if (event.key === "Escape") { // 檢查是否按下 ESC 鍵
-            modal.style.display = "none";
-            delete_confirm_modal.style.display = "none";
-        }
+        window.onkeydown = function (event) {
+            if (event.key === "Escape") { // 檢查是否按下 ESC 鍵
+                modal.style.display = "none";
+                delete_confirm_modal.style.display = "none";
+            }
         }
 
         let operator = 'or'
         // 監聽選單變更事件
         const operatorSelect = document.getElementById("operator");
 
-        operatorSelect.addEventListener("change", function() {
+        operatorSelect.addEventListener("change", function () {
             const selectedValue = operatorSelect.value;
             operator = selectedValue;
             console.log("你選擇了: " + selectedValue);
@@ -183,6 +241,7 @@
     <script src="static/script.js" defer></script>
     <script src="static/tabs.js" defer></script>
     <script src="static/pagination.js" defer></script>
+    <script src="static/word_rank_table.js" defer></script>
     <script src="static/render_tabs.js" defer></script>
     <script src="static/search_documents.js" defer></script>
 </body>
