@@ -117,7 +117,7 @@ def getQueryFilter(
         word_or_list.append({ f"{invIdxKey}.abstract.{word}": { "$exists": True } })
         and_or_or_list.append({"$or": word_or_list})
     
-    return {f"${operator}": and_or_or_list}
+    return {f"${operator.value}": and_or_or_list}
 
 def getAllWordFreqField(
     query_keywords: list[str], 
