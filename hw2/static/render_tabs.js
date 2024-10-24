@@ -325,6 +325,7 @@ function close_document_zipf(){
 
 
 let tableManagers = [null, null]
+let cloudManagers = [null, null]
 
 function drawKeywordZipf(event, keyword_id){
     const query = event.target.value
@@ -353,6 +354,33 @@ function drawKeywordZipf(event, keyword_id){
             tableManagers[keyword_id-1].removeSelectChangeListener();
         }
         tableManagers[keyword_id-1] = new WordRankTableManager(data, keyword_id)
+
+        // $(`#keyword-${keyword_id}-WordCloud`).JQCloud(processData(data),{
+        //     autoResize: true
+        // });
+        $(`#keyword-${keyword_id}-WordCloud`).jQCloud('destroy')
+
+        $(`#keyword-${keyword_id}-WordCloud`).jQCloud(processData(data), {
+            autoResize: true,  // jQCloud 會自動處理 resize
+            classPattern: null,
+            colors: [
+                "#362F9E",  // 更深的起始色
+                "#4338CA",
+                "#4F46E5",
+                "#5651E8",
+                "#625FE9",
+                "#6366F1",
+                "#7673F3",
+                "#8885F5",
+                "#9A97F7",
+                "#A7A6F2"   // 適中的結束色
+            ],
+            fontSize: {
+                from: 0.15,
+                to: 0.02
+            },
+        })
+
         drawZipfChart(
             data, 
             `keyword-${keyword_id}-ZipfChart`, 

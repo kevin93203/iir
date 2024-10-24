@@ -12,7 +12,17 @@
     <link rel="stylesheet" href="static/style.css">
 
     <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
-</head>
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script src="
+    https://cdn.jsdelivr.net/npm/jqcloud2@2.0.3/dist/jqcloud.min.js
+    "></script>
+    
+    <link href="
+    https://cdn.jsdelivr.net/npm/jqcloud2@2.0.3/dist/jqcloud.min.css
+    " rel="stylesheet">
 
 <body>
 
@@ -61,7 +71,7 @@
     <div class="tab">
         <button id="tab-search-result-btn" class="tablinks" onclick="openTab(event, 'tab-search-result')">搜尋結果</button>
         <button class="tablinks" onclick="openTab(event, 'tab-upload-documents')">資料集</button>
-        <button class="tablinks" onclick="openTab(event, 'tab-zipf-compare')">齊夫分布圖比較</button>
+        <button class="tablinks" onclick="openTab(event, 'tab-zipf-compare')">字詞比較</button>
     </div>
 
 
@@ -109,10 +119,11 @@
     <!-- 齊夫分布圖比較 -->
     <div id="tab-zipf-compare" class="tabcontent">
         <div id="zipf-compare">
-            <h2>齊夫分布圖比較</h2>
+            <h2>字詞比較</h2>
             <div class="compare-row">
                 <div id="keyword-1">
                     <input id="keyword-1-input" type="text" placeholder="關鍵字1" onblur="drawKeywordZipf(event, 1)" />
+                    <div id="keyword-1-WordCloud"></div>
                     <div id="keyword-1-ZipfChart" style="width: 100%;height:400px;"></div>
                     <div id="keyword-1-ZipfChart-log" style="width: 100%;height:400px;"></div>
                     <div id="keyword-1-WordsRank" class="words-rank-container">
@@ -146,6 +157,7 @@
                 </div>
                 <div id="keyword-2">
                     <input id="keyword-2-input" type="text" placeholder="關鍵字2" onblur="drawKeywordZipf(event, 2)" />
+                    <div id="keyword-2-WordCloud"></div>
                     <div id="keyword-2-ZipfChart" style="width: 100%;height:400px;"></div>
                     <div id="keyword-2-ZipfChart-log" style="width: 100%;height:400px;"></div>
                     <div id="keyword-2-WordsRank" class="words-rank-container">
@@ -238,12 +250,15 @@
         });
     </script>
 
+
+
     <script src="static/script.js" defer></script>
     <script src="static/tabs.js" defer></script>
     <script src="static/pagination.js" defer></script>
     <script src="static/word_rank_table.js" defer></script>
     <script src="static/render_tabs.js" defer></script>
     <script src="static/search_documents.js" defer></script>
+    <script src="static/word_cloud.js" defer></script>
 </body>
 
 </html>
