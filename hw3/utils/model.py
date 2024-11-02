@@ -21,3 +21,4 @@ class PaginatedResponse(BaseModel):
     pageSize: int
     query: str | None = None
     query_keywords: list[str] | None = None
+    related_keyword: list[str] | None = None

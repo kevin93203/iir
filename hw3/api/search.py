@@ -9,6 +9,7 @@ from utils.query_utils import (
     articleDateToString,
     custom_tokenize
 )
+from utils import related_keyword
 
 def highlight_query_in_documents(
     query_keywords: list[str], 
@@ -71,6 +72,10 @@ async def search_documents_content(
     docs = highlight_query_in_documents(query_keywords, docs, stemmer)
     # 將articleDate轉為"yyyy-mm-dd""
     docs = articleDateToString(docs)
+    
+    related_keyword_list = []
+    for word in query_keywords:
+        related_keyword_list.extend(related_keyword.generate(word))
 
     return PaginatedResponse(
         items=docs,
@@ -79,5 +84,6 @@ async def search_documents_content(
         current_page=page,
         pageSize=pageSize,
         query=query,
-        query_keywords=query_keywords
+        query_keywords=query_keywords,
+        related_keyword=related_keyword_list
     )

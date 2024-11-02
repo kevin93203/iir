@@ -121,12 +121,21 @@ input[type="date"] {
 
 #search-result,
 #upload-documents,
-#search-history {
+#search-history,
+#related {
     /* width: 600px; */
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    gap: 10px;
+}
+
+#related-keywords {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
     gap: 10px;
 }
 

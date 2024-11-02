@@ -141,6 +141,13 @@ const dataSetPaginationManager = new PaginationManager({
     }
 });
 
+function renderRelatedKeyword(data){
+    console.log(data)
+    document.querySelector('#related-keywords').innerHTML = `
+        ${data.related_keyword.map(keyword => `<span class="history" onclick="search('${keyword}')">${keyword}</span>`).join("")}
+    `
+}
+
 function createNewSearchPaginationManager(query){
     // 搜尋結果分頁manager
     const searchPaginationManager = new PaginationManager({
@@ -169,10 +176,14 @@ function createNewSearchPaginationManager(query){
             }    
             const response = await fetch(url);
             const data = await response.json();
+            
+            renderRelatedKeyword(data)
+
             return {
                 items: data.items,
                 total: data.total,
-                totalPages: data.totalPages
+                totalPages: data.totalPages,
+                related_keyword: data.related_keyword,
             };
         },
 

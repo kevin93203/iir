@@ -2,13 +2,16 @@ let search_history = []
 const history_pagination_managers = []
 let current_history_idx = null;
 
-async function search() {
+async function search(query=null) {
+    if(query === null){
+        query = document.getElementById('search').value;
+    }
     // 停止監聽先前的歷史查詢
     if(current_history_idx!==null){
         history_pagination_managers[current_history_idx].unbindEvents();
     }
-    const query = document.getElementById('search').value;
     if (!query) {
+        console.log("searchPaginationManager")
         alert("搜尋文字不能為空白！");
         return;
     }
@@ -35,6 +38,9 @@ function switchSearchReuslt(history_no){
 
     // 更新目前的histroy index
     current_history_idx = history_no;
+
+    const data = history_pagination_managers[current_history_idx].responseData
+    renderRelatedKeyword(data)
     
     // 重新綁定並恢復資料
     history_pagination_managers[current_history_idx].restore();
