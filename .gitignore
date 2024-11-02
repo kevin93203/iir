@@ -4,5 +4,7 @@
 !/hw1/data/.gitkeep
 /hw2/data/*
 !/hw2/data/.gitkeep
+/hw3/data/*
+!/hw3/data/.gitkeep
 .DS_Store
 *.env
