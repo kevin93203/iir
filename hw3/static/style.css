@@ -12,6 +12,12 @@ body {
     /* vh is the viewport height unit */
 }
 
+mark {
+    background-color: #a3e8db;
+    padding: 0 2px;
+    border-radius: 4px;
+}
+
 h1 {
     font-weight: 400;
     color: #202124;
@@ -182,7 +188,7 @@ input[type="date"] {
 .document-content {
     margin-top: 10px;
     max-height: 400px;
-    overflow: auto;
+    overflow-y: scroll;
 }
 
 .document-wrapper {
@@ -361,6 +367,7 @@ ul li {
     text-decoration-line: underline;
     color: #686868;
     cursor: pointer;
+    margin: 16px 0;
 }
 
 .history:hover {
@@ -423,25 +430,56 @@ ul li {
     margin-bottom: 10px;
 }
 
-.document-zipf {
+.document-zipf{
     width: 30px;
     height: 30px;
     cursor: pointer;
     border-radius: 4px;
     padding: 3px;
+    transition: background-color 0.25s ease; /* 設定過渡效果 */
 }
 
-.document-zipf:hover {
+.document-zipf:hover, .document-related-doc-header:hover {
     background-color: #ccc;
 }
 
-.document-zipf img {
+.document-zipf img{
     width: 100%;
     /* 設置圖片寬度等於 div */
     height: 100%;
     /* 設置圖片高度等於 div */
     object-fit: cover;
     /* 調整圖片的縮放方式 */
+}
+
+.document-related-doc-header img{
+    width: 30px;
+    height: 30px;
+}
+
+.document-related-doc-header {
+    font-size: 18px;
+    padding: 5px 5px;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #1DAC92;
+    font-weight: 500;
+}
+
+.related-title {
+    padding: 16px;
+    font-weight: 500;
+    border-bottom: 1px solid #ccc;
+    cursor: pointer;
+    transition: color 0.25s ease; /* 設定過渡效果 */
+}
+
+.related-title:hover {
+    color: #1DAC92;
 }
 
 /* Modal 的背景（半透明黑色遮罩） */

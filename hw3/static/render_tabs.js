@@ -148,6 +148,29 @@ function renderRelatedKeyword(data){
     `
 }
 
+async function handleLoadRelatedDoc(event, pmid){
+    const content = event.target;
+    const document_related_doc = content.querySelector('.document-related-doc')
+    const loading_completed = document_related_doc.getAttribute('loading-completed') === 'true';
+    if(loading_completed) return;
+    if (content.scrollTop + content.clientHeight >= content.scrollHeight - 50) {
+        document_related_doc.setAttribute('loading-completed','true')
+        const url = `/api/related_doc?pmid=${pmid}&top_n=4`
+        const response = await fetch(url);
+        const data = await response.json();
+        // 在目标元素之后插入HTML
+        document_related_doc.insertAdjacentHTML(
+            "beforeend", 
+            data.map((item, index) => `
+                <div class="related-title" 
+                     onclick="search('${item.pmid}')
+                ">
+                    ${item.title}
+                </div>`
+            ).join(""));
+    }
+}
+
 function createNewSearchPaginationManager(query){
     // 搜尋結果分頁manager
     const searchPaginationManager = new PaginationManager({
@@ -201,7 +224,7 @@ function createNewSearchPaginationManager(query){
                     </div>
                 </div>
                 <div class='document-content-container'>
-                    <div class='document-content'>
+                    <div class='document-content' onscroll='handleLoadRelatedDoc(event, ${pmid})' onmouseenter="handleLoadRelatedDoc(event, ${pmid})">
                         <div class='date-zipf-container'>
                             <p class='articleDate'>${articleDate ? articleDate : ''}</p>
                             <div class='document-zipf' onclick="open_document_zipf('${pmid}')">
@@ -210,6 +233,11 @@ function createNewSearchPaginationManager(query){
                         </div> 
                         <h2 class='document-title'>${title}</h2>
                         <p>${abstract}</p>
+                        <div class='document-related-doc' loading-completed="false">
+                            <div class="document-related-doc-header">
+                                <img src="/static/tags.svg" alt="tags icon">相關文獻
+                            </div>
+                         </div>
                     </div>
                 </div>
             </div>

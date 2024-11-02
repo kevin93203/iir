@@ -1,10 +1,10 @@
-from gensim.models import Word2Vec
-from utils import db_connection
+from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 from pymongo.collection import Collection
 import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 import string
+from utils import db_connection
 
 # 初始化NLTK的停用詞
 nltk.download('stopwords')
@@ -23,7 +23,7 @@ class MongoCorpus:
     def __iter__(self):
         skip = 0
         while skip < self.total_documents:
-            documents = self.collection.find({},{'abstract':1}).skip(skip).limit(self.batch_size)
+            documents = self.collection.find({},{'pmid':1,'abstract':1}).skip(skip).limit(self.batch_size)
             for doc in documents:
                 content:str = doc['abstract']
                 # 分詞並處理文本
@@ -32,15 +32,20 @@ class MongoCorpus:
                     word for word in tokens 
                     if word not in stop_words and word not in string.punctuation
                 ]  # 過濾停用詞和標點符號
-                yield filtered_tokens  # 生成處理後的分詞內容
+                yield TaggedDocument(words=filtered_tokens, tags=[doc['pmid']])  # 生成處理後的分詞內容
             skip += self.batch_size
 
+# 創建 MongoCorpus 實例
+corpus = MongoCorpus(db_connection.collection, batch_size=100)
 
-# 創建MongoCorpus實例
-corpus = MongoCorpus(db_connection.collection, batch_size=1000)
+# 訓練 Doc2Vec 模型
+model = Doc2Vec(vector_size=100, min_count=2, epochs=40)
 
-# 使用MongoCorpus訓練Word2Vec模型
-model = Word2Vec(sentences=corpus, vector_size=100, window=5, min_count=1, workers=4)
+# 建立詞彙表
+model.build_vocab(corpus)
 
-# 保存模型
-model.save("./model/pubmed_word2vec.model")
+# 訓練模型
+model.train(corpus, total_examples=model.corpus_count, epochs=model.epochs)
+
+# 儲存模型
+model.save("./model/doc2vec_model.d2v")

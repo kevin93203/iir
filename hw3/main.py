@@ -6,11 +6,13 @@ import os
 from api.search import search_router
 from api.zipf import zipf_router
 from api.dataset_operation import dataset_operation_router
+from api.related_doc import related_doc_router
 
 app = FastAPI()
 app.include_router(search_router)
 app.include_router(zipf_router)
 app.include_router(dataset_operation_router)
+app.include_router(related_doc_router)
 
 # 配置静态文件夹
 app.mount("/static", StaticFiles(directory="static"), name="static")
