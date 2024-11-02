@@ -1,11 +1,10 @@
-import nltk
 from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize, sent_tokenize
+from nltk.tokenize import sent_tokenize
 from nltk.stem import PorterStemmer
 import string
 from collections import defaultdict
 import re
-import model
+import utils.model as model
 
 # nltk.download('punkt')
 # nltk.download('stopwords')
@@ -191,36 +190,3 @@ def documents_statistics(documents):
         stats.append(document_statistics(document))
 
     return stats
-
-# if __name__ == '__main__':
-#     # 測試數據
-#     documents = [
-#         "The core technology of a full-text search engine is the inverted index.",
-#         "Search engines use various algorithms to index and rank pages.",
-#         "The inverted index is critical to efficient search functionality.",
-#         "测试非ASCII字符和单词。"
-#     ]
-
-#     query = "search engine"
-
-#     # 構建倒排索引
-#     inverted_index = build_inverted_index(documents)
-
-#     # 使用倒排索引進行查詢並高亮顯示
-#     highlighted_documents = highlight_query_in_documents(query, documents, inverted_index)
-
-#     # 輸出高亮結果
-#     for i, doc in enumerate(highlighted_documents):
-#         print(f"Document {i+1}:\n{doc}\n")
-
-#     # 計算每個document的字符數、單詞數和句子數
-#     stats = document_statistics(documents)
-
-#     for i, stat in enumerate(stats):
-#         print(f"Document {i+1} stats:")
-#         print(f"Characters (including spaces): {stat['characters_including_spaces']}")
-#         print(f"Characters (excluding spaces): {stat['characters_excluding_spaces']}")
-#         print(f"Words (excluding punctuation): {stat['words']}")
-#         print(f"Sentences: {stat['sentences']}")
-#         print(f"Non-ASCII characters: {stat['non_ascii_characters']}")
-#         print(f"Non-ASCII words: {stat['non_ascii_words']}\n")

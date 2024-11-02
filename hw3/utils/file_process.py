@@ -2,7 +2,7 @@ import os
 from fastapi import UploadFile
 import xml.etree.ElementTree as ET
 from nltk.stem import PorterStemmer
-import se
+from . import se
 import asyncio
 from datetime import datetime
 
