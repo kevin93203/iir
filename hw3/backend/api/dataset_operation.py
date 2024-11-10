@@ -119,6 +119,6 @@ async def document_set(
         items=docs,
         total=totalDocs,
         totalPages=totalPages,
-        current_page=page,
+        currentPage=page,
         pageSize=pageSize
     )

@@ -77,13 +77,15 @@ async def search_documents_content(
     for word in query_keywords:
         related_keyword_list.extend(related_keyword.generate(word))
 
-    return PaginatedResponse(
+    response = PaginatedResponse(
         items=docs,
         total=totalDocs,
         totalPages=totalPages,
-        current_page=page,
+        currentPage=page,
         pageSize=pageSize,
         query=query,
         query_keywords=query_keywords,
         related_keyword=related_keyword_list
     )
+
+    return response

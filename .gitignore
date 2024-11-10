@@ -1,12 +1,4 @@
 *__pycache__
 *venv
-/hw1/data/*
-!/hw1/data/.gitkeep
-/hw2/data/*
-!/hw2/data/.gitkeep
-/hw3/data/*
-!/hw3/data/.gitkeep
-/hw3/model/*
-!/hw3/model/.gitkeep
 .DS_Store
 *.env

@@ -17,7 +17,7 @@ class PaginatedResponse(BaseModel):
     items: List[dict]
     total: int
     totalPages: int
-    current_page: int
+    currentPage: int
     pageSize: int
     query: str | None = None
     query_keywords: list[str] | None = None
